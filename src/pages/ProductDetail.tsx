@@ -5,6 +5,7 @@ import { ShoppingCart, Heart, ShieldCheck, Truck, RotateCcw, Star, X, ZoomIn, Ch
 import { MOCK_PRODUCTS } from '../constants';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import { productService } from '../services/productService';
 import ProductCard from '../components/ProductCard';
 import Skeleton from '../components/Skeleton';
 import { Product } from '../types';
@@ -14,6 +15,7 @@ const ProductDetail: React.FC = () => {
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const [product, setProduct] = useState<Product | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -21,31 +23,45 @@ const ProductDetail: React.FC = () => {
   const [isAdded, setIsAdded] = useState(false);
 
   useEffect(() => {
-    setLoading(true);
-    const foundProduct = MOCK_PRODUCTS.find(p => p.id === id);
-    const timer = setTimeout(() => {
-      setProduct(foundProduct || null);
-      setLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
+    const fetchProductData = async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        // Try Firestore first
+        const found = await productService.getProductById(id);
+        if (found) {
+          setProduct(found);
+          // Fetch related
+          const related = await productService.getProductsByCategory(found.category);
+          setRelatedProducts(related.filter(p => p.id !== found.id).slice(0, 4));
+        } else {
+          // Fallback to Mock
+          const mockFound = MOCK_PRODUCTS.find(p => p.id === id);
+          if (mockFound) {
+            setProduct(mockFound);
+            const mockRelated = MOCK_PRODUCTS.filter(p => p.category === mockFound.category && p.id !== mockFound.id).slice(0, 4);
+            setRelatedProducts(mockRelated);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching product detail:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProductData();
   }, [id]);
 
   const handleAddToCart = () => {
-    for(let i=0; i<quantity; i++) addToCart(product!);
+    if (!product) return;
+    for (let i = 0; i < quantity; i++) addToCart(product);
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 2000);
   };
 
-  const discount = product?.originalPrice 
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) 
+  const discount = product?.originalPrice
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
-
-  const relatedProducts = useMemo(() => {
-    if (!product) return [];
-    return MOCK_PRODUCTS
-      .filter(p => p.category === product.category && p.id !== product.id)
-      .slice(0, 4);
-  }, [product]);
 
   if (loading) {
     return (
@@ -92,18 +108,18 @@ const ProductDetail: React.FC = () => {
         {/* Image Gallery */}
         <div className="w-full lg:w-1/2 space-y-8">
           <div className="relative group">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               className="aspect-[4/5] rounded-[3rem] overflow-hidden bg-stone-100 cursor-zoom-in"
               onClick={() => setIsZoomed(true)}
             >
-              <motion.img 
+              <motion.img
                 key={selectedImage}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                src={product.images[selectedImage]} 
-                alt={product.name} 
+                src={product.images[selectedImage]}
+                alt={product.name}
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
               />
@@ -121,11 +137,11 @@ const ProductDetail: React.FC = () => {
               )}
             </div>
           </div>
-          
+
           <div className="grid grid-cols-4 gap-6">
             {product.images.map((img, i) => (
-              <div 
-                key={i} 
+              <div
+                key={i}
                 onClick={() => setSelectedImage(i)}
                 className={`aspect-square rounded-2xl overflow-hidden bg-stone-100 cursor-pointer border-2 transition-all ${selectedImage === i ? 'border-stone-900' : 'border-transparent hover:border-stone-300'}`}
               >
@@ -161,10 +177,10 @@ const ProductDetail: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <div className="flex text-amber-400">
                   {[...Array(5)].map((_, i) => (
-                    <Star 
-                      key={i} 
-                      size={12} 
-                      fill={i < Math.floor(product.rating) ? "currentColor" : "none"} 
+                    <Star
+                      key={i}
+                      size={12}
+                      fill={i < Math.floor(product.rating) ? "currentColor" : "none"}
                       className={i < Math.floor(product.rating) ? "" : "text-stone-200"}
                     />
                   ))}
@@ -181,21 +197,21 @@ const ProductDetail: React.FC = () => {
           <div className="space-y-8 pt-8 border-t border-stone-100">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-6">
               <div className="flex items-center justify-between border border-stone-200 rounded-full px-8 py-4 min-w-[160px]">
-                <button 
+                <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   className="text-stone-400 hover:text-stone-900 transition-colors"
                 >
                   -
                 </button>
                 <span className="font-bold text-sm text-stone-900">{quantity}</span>
-                <button 
+                <button
                   onClick={() => setQuantity(quantity + 1)}
                   className="text-stone-400 hover:text-stone-900 transition-colors"
                 >
                   +
                 </button>
               </div>
-              <button 
+              <button
                 onClick={handleAddToCart}
                 className={`flex-grow py-5 rounded-full font-bold text-xs uppercase tracking-[0.2em] transition-all shadow-2xl flex items-center justify-center gap-3 ${isAdded ? 'bg-emerald-600 text-white' : 'bg-stone-900 text-white hover:bg-emerald-900'}`}
               >
@@ -225,7 +241,7 @@ const ProductDetail: React.FC = () => {
                   )}
                 </AnimatePresence>
               </button>
-              <button 
+              <button
                 onClick={() => toggleWishlist(product)}
                 className={`p-5 border rounded-full transition-all ${isInWishlist(product.id) ? 'text-red-500 border-red-500 bg-red-50' : 'text-stone-400 border-stone-200 hover:text-red-500 hover:border-red-500'}`}
               >
@@ -278,26 +294,26 @@ const ProductDetail: React.FC = () => {
       <AnimatePresence>
         {isZoomed && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-20">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsZoomed(false)}
               className="absolute inset-0 bg-stone-900/95 backdrop-blur-xl cursor-zoom-out"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               className="relative max-w-5xl w-full h-full flex items-center justify-center pointer-events-none"
             >
-              <img 
-                src={product.images[selectedImage]} 
-                alt={product.name} 
+              <img
+                src={product.images[selectedImage]}
+                alt={product.name}
                 className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
                 referrerPolicy="no-referrer"
               />
-              <button 
+              <button
                 onClick={() => setIsZoomed(false)}
                 className="absolute top-0 right-0 mt-[-40px] text-white/60 hover:text-white transition-colors pointer-events-auto"
               >

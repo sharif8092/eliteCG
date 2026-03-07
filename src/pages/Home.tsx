@@ -4,15 +4,45 @@ import { motion } from 'motion/react';
 import { ArrowRight, Star, ShieldCheck, Truck, Mail, Package, CreditCard, RotateCcw, Quote, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { MOCK_PRODUCTS } from '../constants';
 import ProductCard from '../components/ProductCard';
+import { productService } from '../services/productService';
+import { offerService } from '../services/offerService';
+import { Product, Offer } from '../types';
 
 const Home: React.FC = () => {
-  const featuredProducts = MOCK_PRODUCTS.filter(p => p.featured);
-  const trendingProducts = MOCK_PRODUCTS.slice(0, 4);
-  const bestSellers = MOCK_PRODUCTS.sort((a, b) => b.reviewCount - a.reviewCount).slice(0, 4);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [activeOffer, setActiveOffer] = useState<Offer | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Hero carousel state
   const [heroSlide, setHeroSlide] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState('All');
+
+  useEffect(() => {
+    const fetchHomeData = async () => {
+      try {
+        // Fetch products
+        const allProducts = await productService.getAllProducts();
+        if (allProducts.length > 0) {
+          setProducts(allProducts);
+        } else {
+          setProducts(MOCK_PRODUCTS);
+        }
+
+        // Fetch active offer for banner
+        const activeOffers = await offerService.getActiveOffers();
+        const bannerOffer = activeOffers.find(o => o.type === 'banner');
+        if (bannerOffer) {
+          setActiveOffer(bannerOffer);
+        }
+      } catch (error) {
+        console.error('Error fetching home data:', error);
+        setProducts(MOCK_PRODUCTS);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHomeData();
+  }, []);
 
   // Auto-rotate slides
   useEffect(() => {
@@ -22,6 +52,12 @@ const Home: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
+  const featuredProducts = products.filter(p => p.featured);
+  const trendingProducts = products.slice(0, 4);
+  const bestSellers = [...products].sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0)).slice(0, 4);
+
+  // Hero carousel state
+
   return (
     <div className="pb-24">
       {/* ═══ PROMOTIONAL BANNER STRIP ═══ */}
@@ -29,14 +65,14 @@ const Home: React.FC = () => {
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23fff\' fill-opacity=\'1\'%3E%3Ccircle cx=\'10\' cy=\'10\' r=\'1\'/%3E%3C/g%3E%3C/svg%3E")' }} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 relative z-10">
           <h3 className="text-white font-extrabold text-lg sm:text-2xl md:text-3xl uppercase tracking-wide" style={{ fontStyle: 'italic' }}>
-            Free Prayer Mat
+            {activeOffer ? activeOffer.title : 'Free Prayer Mat'}
           </h3>
           <div className="flex items-center gap-3 sm:gap-5">
             <span className="bg-amber-400 text-emerald-900 text-[8px] sm:text-[9px] uppercase tracking-widest font-extrabold px-3 py-1 rounded-full">
-              Limited Time Offer
+              {activeOffer ? 'Limited Offer' : 'Limited Time Offer'}
             </span>
             <h3 className="text-white font-extrabold text-lg sm:text-2xl md:text-3xl uppercase tracking-wide" style={{ fontStyle: 'italic' }}>
-              On Orders Above ₹2999
+              {activeOffer ? activeOffer.description : 'On Orders Above ₹2999'}
             </h3>
           </div>
         </div>

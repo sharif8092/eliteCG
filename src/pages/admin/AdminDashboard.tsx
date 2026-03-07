@@ -1,31 +1,143 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
+import { Link } from 'react-router-dom';
+import { productService } from '../../services/productService';
+import { blogService } from '../../services/blogService';
+import { orderService } from '../../services/orderService';
+import { Order } from '../../types';
+import { MOCK_PRODUCTS, MOCK_BLOGS } from '../../constants';
 import {
     Users,
     ShoppingBag,
     TrendingUp,
     Clock,
     ArrowUpRight,
-    ArrowDownRight
+    ArrowDownRight,
+    Database,
+    Loader2,
+    CheckCircle2,
+    AlertCircle,
+    FileText
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 const AdminDashboard: React.FC = () => {
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    const [productCount, setProductCount] = useState(0);
+    const [blogCount, setBlogCount] = useState(0);
+    const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+    const [totalOrders, setTotalOrders] = useState(0);
+
+    useEffect(() => {
+        const getCounts = async () => {
+            const [products, blogs, allOrders, recent] = await Promise.all([
+                productService.getAllProducts(),
+                blogService.getAllPosts(),
+                orderService.getAllOrders(),
+                orderService.getRecentActivity()
+            ]);
+            setProductCount(products.length);
+            setBlogCount(blogs.length);
+            setTotalOrders(allOrders.length);
+            setRecentOrders(recent);
+        };
+        getCounts();
+    }, []);
+
+    const handleSyncData = async () => {
+        setIsSyncing(true);
+        setSyncStatus('idle');
+        try {
+            // Check if products already exist to avoid duplicates
+            const existing = await productService.getAllProducts();
+            if (existing.length > 5) {
+                if (!window.confirm('You already have products in your database. Syncing will add duplicates. Continue?')) {
+                    setIsSyncing(false);
+                    return;
+                }
+            }
+
+            // Sync Products
+            for (const product of MOCK_PRODUCTS) {
+                const { id, ...productData } = product;
+                await productService.addProduct(productData);
+            }
+
+            // Sync Blogs
+            for (const blog of MOCK_BLOGS) {
+                await blogService.addPost(blog);
+            }
+
+            setSyncStatus('success');
+            const [updatedP, updatedB] = await Promise.all([
+                productService.getAllProducts(),
+                blogService.getAllPosts()
+            ]);
+            setProductCount(updatedP.length);
+            setBlogCount(updatedB.length);
+            setTimeout(() => setSyncStatus('idle'), 3000);
+        } catch (error) {
+            console.error('Sync error:', error);
+            setSyncStatus('error');
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
     const stats = [
         { label: 'Total Sales', value: '₹124,500', icon: TrendingUp, change: '+12.5%', isPositive: true },
-        { label: 'Active Orders', value: '48', icon: ShoppingBag, change: '+5.2%', isPositive: true },
-        { label: 'Total Customers', value: '1,240', icon: Users, change: '-2.4%', isPositive: false },
-        { label: 'Avg. Order Value', value: '₹2,590', icon: Clock, change: '+8.1%', isPositive: true },
+        { label: 'Active Orders', value: totalOrders > 0 ? totalOrders.toString() : '0', icon: ShoppingBag, change: '+5.2%', isPositive: true },
+        { label: 'Live Products', value: productCount.toString(), icon: Database, change: '+5', isPositive: true },
+        { label: 'News & Articles', value: blogCount.toString(), icon: FileText, change: '+3', isPositive: true },
     ];
 
     return (
         <AdminLayout title="Dashboard Overview">
             <div className="space-y-8">
+                {/* Developer Tools / Sync Card */}
+                <div className="bg-emerald-900 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-emerald-900/20 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-white/10 transition-colors" />
+                    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+                        <div className="max-w-xl">
+                            <h2 className="text-3xl font-serif italic mb-4">Connect Your Database</h2>
+                            <p className="text-emerald-100/70 text-sm leading-relaxed font-light font-sans">
+                                Your storefront is currently transitioning to a live database. Click "Sync Design Data" to upload the initial products to your Firestore so they appear across the whole website.
+                            </p>
+                        </div>
+                        <button
+                            onClick={handleSyncData}
+                            disabled={isSyncing}
+                            className={`
+                                flex items-center gap-3 px-8 py-5 rounded-2xl font-bold text-xs uppercase tracking-[0.2em] transition-all font-sans
+                                ${syncStatus === 'success'
+                                    ? 'bg-emerald-400 text-emerald-950'
+                                    : syncStatus === 'error'
+                                        ? 'bg-red-400 text-red-950'
+                                        : 'bg-white text-emerald-950 hover:bg-emerald-50'}
+                                shadow-xl disabled:opacity-50
+                            `}
+                        >
+                            {isSyncing ? (
+                                <Loader2 className="animate-spin" size={18} />
+                            ) : syncStatus === 'success' ? (
+                                <CheckCircle2 size={18} />
+                            ) : syncStatus === 'error' ? (
+                                <AlertCircle size={18} />
+                            ) : (
+                                <Database size={18} />
+                            )}
+                            {isSyncing ? 'Uploading...' : syncStatus === 'success' ? 'Synced successfully' : 'Sync Design Data'}
+                        </button>
+                    </div>
+                </div>
+
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {stats.map((stat, idx) => (
-                        <div key={idx} className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div key={idx} className="bg-white p-7 rounded-[2rem] border border-stone-200 shadow-sm hover:shadow-lg transition-all duration-300">
                             <div className="flex items-center justify-between mb-4">
-                                <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
+                                <div className="p-3 bg-stone-50 text-stone-900 rounded-2xl">
                                     <stat.icon size={22} />
                                 </div>
                                 <div className={`flex items-center text-xs font-bold ${stat.isPositive ? 'text-emerald-600' : 'text-red-500'}`}>
@@ -34,7 +146,7 @@ const AdminDashboard: React.FC = () => {
                                 </div>
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-stone-500">{stat.label}</p>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 font-sans">{stat.label}</p>
                                 <h3 className="text-2xl font-bold text-stone-900 mt-1">{stat.value}</h3>
                             </div>
                         </div>
@@ -43,44 +155,51 @@ const AdminDashboard: React.FC = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Recent Orders Placeholder */}
-                    <div className="lg:col-span-2 bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-                        <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
-                            <h3 className="font-bold text-stone-900">Recent Activity</h3>
-                            <button className="text-xs font-bold text-emerald-600 hover:text-emerald-700">View All</button>
+                    <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-stone-200 shadow-sm overflow-hidden">
+                        <div className="px-8 py-6 border-b border-stone-50 flex items-center justify-between">
+                            <h3 className="font-bold text-stone-900 font-serif">Store Activity</h3>
+                            <Link to="/admin/orders" className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest hover:text-emerald-700 font-sans">View History</Link>
                         </div>
-                        <div className="p-6">
-                            <div className="space-y-6">
-                                {[1, 2, 3, 4].map((item) => (
-                                    <div key={item} className="flex items-center justify-between group cursor-pointer">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-500">
-                                                <ShoppingBag size={18} />
+                        <div className="p-8">
+                            <div className="space-y-8">
+                                {recentOrders.length === 0 ? (
+                                    <div className="py-10 text-center text-stone-400 italic text-sm">No recent activity found.</div>
+                                ) : (
+                                    recentOrders.map((order) => (
+                                        <Link to="/admin/orders" key={order.id} className="flex items-center justify-between group cursor-pointer">
+                                            <div className="flex items-center gap-5">
+                                                <div className="w-12 h-12 rounded-2xl bg-stone-50 flex items-center justify-center text-stone-500 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
+                                                    <ShoppingBag size={20} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-bold text-stone-900 group-hover:text-emerald-600 transition-colors tracking-tight">Order #{order.id.slice(0, 8).toUpperCase()}</p>
+                                                    <p className="text-xs text-stone-400 font-medium font-sans capitalize">{order.status} • {new Date(order.date).toLocaleDateString()}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-stone-900 group-hover:text-emerald-600 transition-colors">New Order #ORD-24{item}</p>
-                                                <p className="text-xs text-stone-500">2 items worth ₹4,500 • 5 mins ago</p>
+                                            <div className="text-right">
+                                                <p className="text-sm font-bold text-stone-900">₹{order.total.toLocaleString()}</p>
+                                                <p className="text-[10px] text-stone-400 font-bold uppercase font-sans">{order.items.length} items</p>
                                             </div>
-                                        </div>
-                                        <span className="px-2.5 py-1 bg-yellow-50 text-yellow-700 text-[10px] font-bold uppercase rounded-full border border-yellow-100">Pending</span>
-                                    </div>
-                                ))}
+                                        </Link>
+                                    ))
+                                )}
                             </div>
                         </div>
                     </div>
 
                     {/* Quick Actions */}
-                    <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
-                        <h3 className="font-bold text-stone-900 mb-6">Quick Actions</h3>
-                        <div className="space-y-3">
-                            <button className="w-full py-3 bg-stone-900 text-white rounded-xl text-sm font-bold hover:bg-stone-800 transition-colors flex items-center justify-center gap-2">
-                                Add New Product
-                            </button>
-                            <button className="w-full py-3 bg-white text-stone-900 border border-stone-200 rounded-xl text-sm font-bold hover:bg-stone-50 transition-colors flex items-center justify-center gap-2">
-                                Create Offer
-                            </button>
-                            <button className="w-full py-3 bg-white text-emerald-700 border border-emerald-100 rounded-xl text-sm font-bold hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2">
-                                Post to Blog
-                            </button>
+                    <div className="bg-white rounded-[2.5rem] border border-stone-200 shadow-sm p-8">
+                        <h3 className="font-bold text-stone-900 mb-8 font-serif">Quick Controls</h3>
+                        <div className="space-y-4">
+                            <Link to="/admin/products" className="block w-full text-center py-4 bg-stone-900 text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-900 transition-all shadow-xl shadow-stone-900/10">
+                                Create New Product
+                            </Link>
+                            <Link to="/admin/offers" className="block w-full text-center py-4 bg-white text-stone-900 border border-stone-200 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-stone-50 transition-all">
+                                Launch Promotion
+                            </Link>
+                            <Link to="/admin/blogs" className="block w-full text-center py-4 bg-white text-emerald-800 border border-emerald-100 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-50 transition-all">
+                                Write Blog Post
+                            </Link>
                         </div>
                     </div>
                 </div>

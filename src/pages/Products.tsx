@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Filter, SlidersHorizontal, X, ShoppingBag, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { MOCK_PRODUCTS, CATEGORIES } from '../constants';
 import ProductCard from '../components/ProductCard';
+import { productService } from '../services/productService';
 import Skeleton from '../components/Skeleton';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
@@ -16,6 +17,7 @@ const Products: React.FC = () => {
   const searchQueryParam = searchParams.get('search');
   const { addToCart } = useCart();
 
+  const [products, setProducts] = useState<Product[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(categoryFilter ? [categoryFilter] : []);
   const [sortBy, setSortBy] = useState<'price-low' | 'price-high' | 'newest' | 'name-az' | 'name-za'>('newest');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
@@ -24,19 +26,33 @@ const Products: React.FC = () => {
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Fetch products from Firestore
+  useEffect(() => {
+    const fetchProductsData = async () => {
+      setLoading(true);
+      try {
+        const data = await productService.getAllProducts();
+        if (data.length > 0) {
+          setProducts(data);
+        } else {
+          setProducts(MOCK_PRODUCTS);
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        setProducts(MOCK_PRODUCTS);
+      } finally {
+        setTimeout(() => setLoading(false), 500); // Small delay for smooth transition
+      }
+    };
+    fetchProductsData();
+  }, []);
+
   // Sync category filter from URL params
   useEffect(() => {
     if (categoryFilter) {
       setSelectedCategories([categoryFilter]);
-    } else {
-      setSelectedCategories([]);
     }
   }, [categoryFilter]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1200);
-    return () => clearTimeout(timer);
-  }, []);
 
   // Reset page when filters change
   useEffect(() => {
@@ -44,7 +60,7 @@ const Products: React.FC = () => {
   }, [selectedCategories, sortBy, priceRange, onlyInStock, searchQueryParam]);
 
   const filteredProducts = useMemo(() => {
-    let result = [...MOCK_PRODUCTS];
+    let result = [...products];
 
     // Search Filter
     if (searchQueryParam) {

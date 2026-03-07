@@ -13,12 +13,22 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
+import { auth } from '../../firebase';
+import { signOut } from 'firebase/auth';
+
 const AdminSidebar: React.FC = () => {
     const location = useLocation();
+
+    const handleLogout = async () => {
+        localStorage.removeItem('auth_bypass');
+        await signOut(auth);
+        window.location.href = '/';
+    };
 
     const menuItems = [
         { label: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
         { label: 'Products', icon: Package, path: '/admin/products' },
+        { label: 'Orders', icon: ShoppingBag, path: '/admin/orders' },
         { label: 'Offers & Banners', icon: Tag, path: '/admin/offers' },
         { label: 'Blog Posts', icon: FileText, path: '/admin/blogs' },
         { label: 'Media Library', icon: ImageIcon, path: '/admin/media' },
@@ -66,6 +76,7 @@ const AdminSidebar: React.FC = () => {
                     Go to Storefront
                 </Link>
                 <button
+                    onClick={handleLogout}
                     className="w-full flex items-center gap-3 px-3 py-2.5 mt-1 text-sm text-red-500 hover:bg-red-50 rounded-lg transition-all"
                 >
                     <LogOut size={18} />

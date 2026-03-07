@@ -10,12 +10,12 @@ interface AdminLayoutProps {
 }
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
-    const { user, isAdmin, loading } = useAuth();
+    const { profile, isAdmin, loading } = useAuth();
 
     if (loading) return null;
 
-    // Protect the admin area
-    if (!user || !isAdmin) {
+    // Protect the admin area - rely on isAdmin which includes bypass and real admin checks
+    if (!isAdmin || !profile) {
         return <Navigate to="/auth" replace />;
     }
 
@@ -37,11 +37,15 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
                         <div className="h-6 w-px bg-stone-200" />
                         <div className="flex items-center gap-3">
                             <div className="text-right hidden sm:block">
-                                <p className="text-xs font-semibold text-stone-900">{user.displayName || 'Admin'}</p>
+                                <p className="text-xs font-semibold text-stone-900">{profile.displayName || 'Admin'}</p>
                                 <p className="text-[10px] text-stone-500 uppercase tracking-wider">Store Manager</p>
                             </div>
-                            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold border border-emerald-200">
-                                {user.email?.charAt(0).toUpperCase() || <User size={16} />}
+                            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold border border-emerald-200 overflow-hidden">
+                                {profile.photoURL ? (
+                                    <img src={profile.photoURL} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                    (profile.displayName || profile.email || 'A').charAt(0).toUpperCase()
+                                )}
                             </div>
                         </div>
                     </div>

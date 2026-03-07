@@ -17,6 +17,8 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import ProductManagement from './pages/admin/ProductManagement';
 import OfferManagement from './pages/admin/OfferManagement';
 import BlogManagement from './pages/admin/BlogManagement';
+import MediaLibrary from './pages/admin/MediaLibrary';
+import AdminOrders from './pages/admin/AdminOrders';
 import ErrorBoundary from './components/ErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
 
@@ -44,7 +46,8 @@ export default function App() {
                   <Route path="/admin/products" element={<ProductManagement />} />
                   <Route path="/admin/offers" element={<OfferManagement />} />
                   <Route path="/admin/blogs" element={<BlogManagement />} />
-                  <Route path="/admin/media" element={<AdminDashboard />} /> {/* Placeholder */}
+                  <Route path="/admin/media" element={<MediaLibrary />} />
+                  <Route path="/admin/orders" element={<AdminOrders />} />
                 </Routes>
               </Layout>
               <ScrollToTop />

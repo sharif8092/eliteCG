@@ -194,3 +194,34 @@ export const MOCK_PRODUCTS = [
     reviewCount: 22
   }
 ];
+
+export const MOCK_BLOGS = [
+  {
+    title: 'The Beauty of Islamic Calligraphy',
+    content: 'Islamic calligraphy is the artistic practice of handwriting and calligraphy, based upon the alphabet in the lands sharing a common Islamic cultural heritage. It includes Arabic, Ottoman, and Persian calligraphy.',
+    author: 'Amina Khan',
+    date: '2026-03-01',
+    status: 'Published' as const,
+    comments: 12,
+    category: 'Art & Culture',
+    image: 'https://images.unsplash.com/photo-1590073844006-33379778ae09?q=80&w=800&auto=format&fit=crop',
+    heroImage: 'https://images.unsplash.com/photo-1590073844006-33379778ae09?q=80&w=1200&auto=format&fit=crop',
+    seoTitle: 'Islamic Calligraphy: A Journey through History and Art',
+    seoDescription: 'Discover the rich history and intricate beauty of Islamic calligraphy. From ancient scripts to modern masterpieces.',
+    seoKeywords: ['islamic art', 'calligraphy', 'arabic script']
+  },
+  {
+    title: '5 Tips for Choosing the Perfect Abaya',
+    content: 'Choosing the right abaya can be a daunting task with so many styles and fabrics available. Here are five tips to help you find the perfect one for any occasion.',
+    author: 'Zainab Ahmed',
+    date: '2026-03-05',
+    status: 'Published' as const,
+    comments: 8,
+    category: 'Fashion',
+    image: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?q=80&w=800&auto=format&fit=crop',
+    heroImage: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?q=80&w=1200&auto=format&fit=crop',
+    seoTitle: 'How to Choose the Perfect Abaya: A Style Guide',
+    seoDescription: 'Looking for the perfect abaya? Follow our expert tips on fabric, fit, and style to find your next favorite piece.',
+    seoKeywords: ['abaya style', 'modest fashion', 'hijab tips']
+  }
+];
