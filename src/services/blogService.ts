@@ -1,76 +1,83 @@
-import {
-    collection,
-    getDocs,
-    getDoc,
-    doc,
-    addDoc,
-    updateDoc,
-    deleteDoc,
-    query,
-    orderBy,
-    limit
-} from 'firebase/firestore';
-import { db } from '../firebase';
+import { wpService } from './wooCommerceService';
 import { BlogPost } from '../types';
 
-const COLLECTION_NAME = 'blogs';
+const mapWPPostToInternal = (post: any): BlogPost => {
+    return {
+        id: post.id.toString(),
+        title: post.title.rendered,
+        content: post.content.rendered,
+        author: post._embedded?.author?.[0]?.name || 'Admin',
+        date: post.date.split('T')[0],
+        status: post.status === 'publish' ? 'Published' : 'Draft',
+        comments: 0, // WP handles this separately, keeping 0 for now
+        image: post._embedded?.['wp:featuredmedia']?.[0]?.source_url || '',
+        imageAlt: post._embedded?.['wp:featuredmedia']?.[0]?.alt_text || '',
+        category: post._embedded?.['wp:term']?.[0]?.[0]?.name || 'Lifestyle'
+    };
+};
 
 export const blogService = {
     // Get all blog posts
     async getAllPosts(): Promise<BlogPost[]> {
-        const q = query(collection(db, COLLECTION_NAME), orderBy('date', 'desc'));
-        const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        } as BlogPost));
+        const response = await wpService.get('/posts', {
+            params: { _embed: true }
+        });
+        return (response.data as any[]).map(mapWPPostToInternal);
     },
 
     // Get recent blog posts
     async getRecentPosts(limitCount: number = 3): Promise<BlogPost[]> {
-        const q = query(
-            collection(db, COLLECTION_NAME),
-            orderBy('date', 'desc'),
-            limit(limitCount)
-        );
-        const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        } as BlogPost));
+        const response = await wpService.get('/posts', {
+            params: { _embed: true, per_page: limitCount }
+        });
+        return (response.data as any[]).map(mapWPPostToInternal);
     },
 
     // Get single blog post
     async getPostById(id: string): Promise<BlogPost | null> {
-        const docRef = doc(db, COLLECTION_NAME, id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            return { id: docSnap.id, ...docSnap.data() } as BlogPost;
+        try {
+            const response = await wpService.get(`/posts/${id}`, {
+                params: { _embed: true }
+            });
+            return mapWPPostToInternal(response.data);
+        } catch (error) {
+            console.error('Error fetching post:', error);
+            return null;
         }
-        return null;
     },
 
     // Add new blog post
     async addPost(post: Omit<BlogPost, 'id'>): Promise<string> {
-        const docRef = await addDoc(collection(db, COLLECTION_NAME), {
-            ...post,
-            createdAt: new Date().toISOString()
+        const response = await wpService.post('/posts', {
+            title: post.title,
+            content: post.content,
+            status: post.status === 'Published' ? 'publish' : 'draft',
+            featured_media: post.image ? await this.getMediaIdByUrl(post.image) : undefined
         });
-        return docRef.id;
+        return (response.data as any).id.toString();
     },
 
     // Update blog post
     async updatePost(id: string, post: Partial<BlogPost>): Promise<void> {
-        const docRef = doc(db, COLLECTION_NAME, id);
-        await updateDoc(docRef, {
-            ...post,
-            updatedAt: new Date().toISOString()
+        await wpService.put(`/posts/${id}`, {
+            title: post.title,
+            content: post.content,
+            status: post.status === 'Published' ? 'publish' : 'draft',
+            featured_media: post.image ? await this.getMediaIdByUrl(post.image) : undefined
         });
     },
 
     // Delete blog post
     async deletePost(id: string): Promise<void> {
-        const docRef = doc(db, COLLECTION_NAME, id);
-        await deleteDoc(docRef);
+        await wpService.delete(`/posts/${id}`, {
+            params: { force: true } // Bypass trash
+        });
+    },
+
+    // Helper to find media ID by URL (limited)
+    async getMediaIdByUrl(url: string): Promise<number | undefined> {
+        // In a real WP setup, we'd search media by URL or slug
+        // For now, return undefined to avoid errors if not found
+        return undefined;
     }
 };

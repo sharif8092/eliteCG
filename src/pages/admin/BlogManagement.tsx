@@ -211,7 +211,9 @@ const BlogManagement: React.FC = () => {
                                             </div>
                                         </div>
                                         <h3 className="text-2xl font-serif italic font-bold text-stone-900 mb-4">{post.title}</h3>
-                                        <p className="text-stone-500 text-sm font-light line-clamp-2 max-w-2xl">{post.content}</p>
+                                        <p className="text-stone-500 text-sm font-light line-clamp-2 max-w-2xl">
+                                            {post.content.replace(/<[^>]*>/g, '')}
+                                        </p>
                                     </div>
                                     <div className="flex items-center gap-6 mt-6">
                                         <div className="flex items-center gap-2 px-3 py-1.5 bg-stone-50 rounded-lg">

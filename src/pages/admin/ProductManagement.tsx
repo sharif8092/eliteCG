@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import FileUpload from '../../components/admin/FileUpload';
 import { productService } from '../../services/productService';
+import { categoryService, Category as WooCommerceCategory } from '../../services/categoryService';
 import { Product } from '../../types';
-import { CATEGORIES } from '../../constants';
 import {
     Search,
     Plus,
@@ -26,6 +26,7 @@ const ProductManagement: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
+    const [categories, setCategories] = useState<WooCommerceCategory[]>([]);
 
     // Form State
     const [formData, setFormData] = useState<Omit<Product, 'id'>>({
@@ -33,7 +34,7 @@ const ProductManagement: React.FC = () => {
         description: '',
         price: 0,
         originalPrice: 0,
-        category: CATEGORIES[0],
+        categories: [],
         images: [],
         imageAlts: [],
         stock: 0,
@@ -43,7 +44,22 @@ const ProductManagement: React.FC = () => {
     });
 
     useEffect(() => {
-        fetchProducts();
+        const init = async () => {
+            setLoading(true);
+            try {
+                const [productsData, categoriesData] = await Promise.all([
+                    productService.getAllProducts(),
+                    categoryService.getAllCategories()
+                ]);
+                setProducts(productsData);
+                setCategories(categoriesData);
+            } catch (error) {
+                console.error('Error initializing data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        init();
     }, []);
 
     const fetchProducts = async () => {
@@ -66,7 +82,7 @@ const ProductManagement: React.FC = () => {
                 description: product.description,
                 price: product.price,
                 originalPrice: product.originalPrice || 0,
-                category: product.category,
+                categories: product.categories,
                 images: product.images || [],
                 imageAlts: product.imageAlts || [],
                 stock: product.stock,
@@ -81,7 +97,7 @@ const ProductManagement: React.FC = () => {
                 description: '',
                 price: 0,
                 originalPrice: 0,
-                category: CATEGORIES[0],
+                categories: categories[0] ? [categories[0].name] : [],
                 images: [],
                 imageAlts: [],
                 stock: 0,
@@ -125,7 +141,7 @@ const ProductManagement: React.FC = () => {
 
     const filteredProducts = products.filter(p =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.category.toLowerCase().includes(searchTerm.toLowerCase())
+        p.categories.some(cat => cat.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     return (
@@ -208,7 +224,7 @@ const ProductManagement: React.FC = () => {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className="px-3 py-1 bg-stone-100 text-stone-600 text-[10px] font-bold uppercase rounded-lg font-sans">
-                                                    {product.category}
+                                                    {product.categories.join(', ')}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">
@@ -301,11 +317,12 @@ const ProductManagement: React.FC = () => {
                                             <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Category</label>
                                             <select
                                                 className="w-full bg-stone-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-4 focus:ring-emerald-500/5 transition-all outline-none text-stone-900 appearance-none font-sans"
-                                                value={formData.category}
-                                                onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                                value={formData.categories[0] || ''}
+                                                onChange={e => setFormData({ ...formData, categories: [e.target.value] })}
                                             >
-                                                {CATEGORIES.map(cat => (
-                                                    <option key={cat} value={cat}>{cat}</option>
+                                                <option value="" disabled>Select Category</option>
+                                                {categories.map(cat => (
+                                                    <option key={cat.id} value={cat.name}>{cat.name}</option>
                                                 ))}
                                             </select>
                                         </div>

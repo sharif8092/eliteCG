@@ -19,6 +19,7 @@ import OfferManagement from './pages/admin/OfferManagement';
 import BlogManagement from './pages/admin/BlogManagement';
 import MediaLibrary from './pages/admin/MediaLibrary';
 import AdminOrders from './pages/admin/AdminOrders';
+import CategoryManagement from './pages/admin/CategoryManagement';
 import ErrorBoundary from './components/ErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
 
@@ -44,6 +45,7 @@ export default function App() {
                   {/* Admin Routes */}
                   <Route path="/admin" element={<AdminDashboard />} />
                   <Route path="/admin/products" element={<ProductManagement />} />
+                  <Route path="/admin/categories" element={<CategoryManagement />} />
                   <Route path="/admin/offers" element={<OfferManagement />} />
                   <Route path="/admin/blogs" element={<BlogManagement />} />
                   <Route path="/admin/media" element={<MediaLibrary />} />

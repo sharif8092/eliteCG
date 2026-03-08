@@ -88,7 +88,7 @@ const Navbar: React.FC = () => {
                   </Link>
                 ))}
                 <Link
-                  to="/products"
+                  to="/products?filter=new-arrivals"
                   className="px-3 py-1.5 ml-2 text-[11px] uppercase tracking-[0.12em] font-bold text-emerald-700 hover:text-emerald-900 transition-colors duration-200 whitespace-nowrap border border-emerald-100 rounded-full bg-emerald-50/50"
                 >
                   New Arrivals
@@ -168,7 +168,7 @@ const Navbar: React.FC = () => {
                   </Link>
                 ))}
                 <Link
-                  to="/products"
+                  to="/products?filter=new-arrivals"
                   onClick={() => setIsOpen(false)}
                   className="block py-3 text-[11px] uppercase tracking-[0.15em] font-bold text-emerald-700"
                 >

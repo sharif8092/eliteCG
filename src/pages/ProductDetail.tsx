@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { ShoppingCart, Heart, ShieldCheck, Truck, RotateCcw, Star, X, ZoomIn, Check } from 'lucide-react';
-import { MOCK_PRODUCTS } from '../constants';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { productService } from '../services/productService';
@@ -32,16 +31,9 @@ const ProductDetail: React.FC = () => {
         if (found) {
           setProduct(found);
           // Fetch related
-          const related = await productService.getProductsByCategory(found.category);
+          const primaryCategory = found.categories[0] || 'Uncategorized';
+          const related = await productService.getProductsByCategory(primaryCategory);
           setRelatedProducts(related.filter(p => p.id !== found.id).slice(0, 4));
-        } else {
-          // Fallback to Mock
-          const mockFound = MOCK_PRODUCTS.find(p => p.id === id);
-          if (mockFound) {
-            setProduct(mockFound);
-            const mockRelated = MOCK_PRODUCTS.filter(p => p.category === mockFound.category && p.id !== mockFound.id).slice(0, 4);
-            setRelatedProducts(mockRelated);
-          }
         }
       } catch (error) {
         console.error('Error fetching product detail:', error);
@@ -159,7 +151,7 @@ const ProductDetail: React.FC = () => {
               <span className="mx-3">/</span>
               <Link to="/products" className="hover:text-stone-900 transition-colors">Shop</Link>
               <span className="mx-3">/</span>
-              <span className="text-stone-900">{product.category}</span>
+              <span className="text-stone-900">{product.categories[0] || 'Uncategorized'}</span>
             </nav>
             <h1 className="text-5xl md:text-7xl font-serif text-stone-900 leading-tight">
               {product.name.split(' ').map((word, i) => (
@@ -190,9 +182,10 @@ const ProductDetail: React.FC = () => {
             </div>
           </div>
 
-          <p className="text-stone-500 text-lg leading-relaxed font-light max-w-lg">
-            {product.description}
-          </p>
+          <div
+            className="text-stone-500 text-lg leading-relaxed font-light max-w-lg product-description"
+            dangerouslySetInnerHTML={{ __html: product.description }}
+          />
 
           <div className="space-y-8 pt-8 border-t border-stone-100">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-6">

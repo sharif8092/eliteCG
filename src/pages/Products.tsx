@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Filter, SlidersHorizontal, X, ShoppingBag, Star, ChevronLeft, ChevronRight } from 'lucide-react';
-import { MOCK_PRODUCTS, CATEGORIES } from '../constants';
 import ProductCard from '../components/ProductCard';
 import { productService } from '../services/productService';
+import { categoryService, Category } from '../services/categoryService';
 import Skeleton from '../components/Skeleton';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
@@ -15,9 +15,11 @@ const Products: React.FC = () => {
   const [searchParams] = useSearchParams();
   const categoryFilter = searchParams.get('category');
   const searchQueryParam = searchParams.get('search');
+  const filterParam = searchParams.get('filter');
   const { addToCart } = useCart();
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(categoryFilter ? [categoryFilter] : []);
   const [sortBy, setSortBy] = useState<'price-low' | 'price-high' | 'newest' | 'name-az' | 'name-za'>('newest');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
@@ -26,25 +28,24 @@ const Products: React.FC = () => {
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch products from Firestore
+  // Fetch products and categories
   useEffect(() => {
-    const fetchProductsData = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const data = await productService.getAllProducts();
-        if (data.length > 0) {
-          setProducts(data);
-        } else {
-          setProducts(MOCK_PRODUCTS);
-        }
+        const [productsData, categoriesData] = await Promise.all([
+          productService.getAllProducts(),
+          categoryService.getAllCategories()
+        ]);
+        setProducts(productsData);
+        setCategories(categoriesData);
       } catch (error) {
-        console.error('Error fetching products:', error);
-        setProducts(MOCK_PRODUCTS);
+        console.error('Error fetching data:', error);
       } finally {
         setTimeout(() => setLoading(false), 500); // Small delay for smooth transition
       }
     };
-    fetchProductsData();
+    fetchData();
   }, []);
 
   // Sync category filter from URL params
@@ -68,13 +69,16 @@ const Products: React.FC = () => {
       result = result.filter(p =>
         p.name.toLowerCase().includes(query) ||
         p.description.toLowerCase().includes(query) ||
-        p.category.toLowerCase().includes(query)
+        p.categories.some(cat => cat.toLowerCase().includes(query))
       );
     }
 
     // Category Filter
     if (selectedCategories.length > 0) {
-      result = result.filter(p => selectedCategories.includes(p.category));
+      const normalizedSelected = selectedCategories.map(c => c.toLowerCase());
+      result = result.filter(p =>
+        p.categories.some(cat => normalizedSelected.includes(cat.toLowerCase()))
+      );
     }
 
     // Price Filter
@@ -95,8 +99,13 @@ const Products: React.FC = () => {
     } else if (sortBy === 'name-za') {
       result.sort((a, b) => b.name.localeCompare(a.name));
     } else if (sortBy === 'newest') {
-      // Assuming higher ID means newer for mock data
+      // Use numeric ID as a proxy for date since WooCommerce usually increments IDs
       result.sort((a, b) => parseInt(b.id) - parseInt(a.id));
+    }
+
+    // New Arrivals Filter - Show only last 20
+    if (filterParam === 'new-arrivals') {
+      result = result.slice(0, 20);
     }
 
     return result;
@@ -122,16 +131,22 @@ const Products: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 space-y-8 md:space-y-0">
         <div className="max-w-xl">
           <span className="text-emerald-800 text-[10px] uppercase tracking-[0.4em] font-bold mb-4 block">
-            {searchQueryParam ? 'Search Results' : 'The Collection'}
+            {searchQueryParam ? 'Search Results' : filterParam === 'new-arrivals' ? 'Just Landed' : 'The Collection'}
           </span>
           <h1 className="text-5xl md:text-7xl font-serif text-stone-900 leading-tight">
             {searchQueryParam ? (
               <>Results for "<span className="italic">{searchQueryParam}</span>"</>
+            ) : filterParam === 'new-arrivals' ? (
+              <>New <span className="italic">Arrivals</span></>
             ) : (
               <>All <span className="italic">Objects</span></>
             )}
           </h1>
-          <p className="text-stone-500 mt-6 font-light">{filteredProducts.length} items {searchQueryParam ? 'found' : 'curated for you'}</p>
+          <p className="text-stone-500 mt-6 font-light">
+            {filterParam === 'new-arrivals'
+              ? `Our latest ${filteredProducts.length} pieces, freshly arrived.`
+              : `${filteredProducts.length} items ${searchQueryParam ? 'found' : 'curated for you'}`}
+          </p>
         </div>
 
         <div className="flex items-center space-x-8">
@@ -161,24 +176,24 @@ const Products: React.FC = () => {
               Categories
             </h3>
             <div className="space-y-4">
-              {CATEGORIES.map(cat => (
-                <label key={cat} className="flex items-center group cursor-pointer">
+              {categories.map(cat => (
+                <label key={cat.id} className="flex items-center group cursor-pointer">
                   <div className="relative flex items-center">
                     <input
                       type="checkbox"
-                      checked={selectedCategories.includes(cat)}
-                      onChange={() => toggleCategory(cat)}
+                      checked={selectedCategories.includes(cat.name)}
+                      onChange={() => toggleCategory(cat.name)}
                       className="sr-only"
                     />
                     <motion.div
                       animate={{
-                        backgroundColor: selectedCategories.includes(cat) ? '#1c1917' : '#ffffff',
-                        borderColor: selectedCategories.includes(cat) ? '#1c1917' : '#e7e5e4'
+                        backgroundColor: selectedCategories.includes(cat.name) ? '#1c1917' : '#ffffff',
+                        borderColor: selectedCategories.includes(cat.name) ? '#1c1917' : '#e7e5e4'
                       }}
                       className="w-4 h-4 border transition-all rounded-sm flex items-center justify-center"
                     >
                       <AnimatePresence>
-                        {selectedCategories.includes(cat) && (
+                        {selectedCategories.includes(cat.name) && (
                           <motion.div
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
@@ -189,8 +204,8 @@ const Products: React.FC = () => {
                       </AnimatePresence>
                     </motion.div>
                   </div>
-                  <span className={`ml-4 text-[11px] uppercase tracking-widest transition-all ${selectedCategories.includes(cat) ? 'text-stone-900 font-bold' : 'text-stone-400 group-hover:text-stone-600'}`}>
-                    {cat}
+                  <span className={`ml-4 text-[11px] uppercase tracking-widest transition-all ${selectedCategories.includes(cat.name) ? 'text-stone-900 font-bold' : 'text-stone-400 group-hover:text-stone-600'}`}>
+                    {cat.name}
                   </span>
                 </label>
               ))}
@@ -379,7 +394,7 @@ const Products: React.FC = () => {
                 <div className="space-y-8">
                   <div>
                     <span className="text-[10px] uppercase tracking-[0.4em] font-bold text-stone-400 mb-4 block">
-                      {quickViewProduct.category}
+                      {quickViewProduct.categories.join(' · ')}
                     </span>
                     <h2 className="text-4xl font-serif text-stone-900 leading-tight mb-4">
                       {quickViewProduct.name}
@@ -405,9 +420,10 @@ const Products: React.FC = () => {
                     ₹{quickViewProduct.price.toLocaleString()}
                   </p>
 
-                  <p className="text-stone-500 font-light leading-relaxed">
-                    {quickViewProduct.description}
-                  </p>
+                  <div
+                    className="text-stone-500 font-light leading-relaxed product-description"
+                    dangerouslySetInnerHTML={{ __html: quickViewProduct.description }}
+                  />
 
                   <div className="pt-8 flex flex-col sm:flex-row gap-4">
                     <button

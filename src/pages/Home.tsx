@@ -22,11 +22,7 @@ const Home: React.FC = () => {
       try {
         // Fetch products
         const allProducts = await productService.getAllProducts();
-        if (allProducts.length > 0) {
-          setProducts(allProducts);
-        } else {
-          setProducts(MOCK_PRODUCTS);
-        }
+        setProducts(allProducts);
 
         // Fetch active offer for banner
         const activeOffers = await offerService.getActiveOffers();
@@ -36,7 +32,6 @@ const Home: React.FC = () => {
         }
       } catch (error) {
         console.error('Error fetching home data:', error);
-        setProducts(MOCK_PRODUCTS);
       } finally {
         setLoading(false);
       }
@@ -232,9 +227,12 @@ const Home: React.FC = () => {
 
         {/* Filtered Products Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 sm:gap-x-8 gap-y-10 sm:gap-y-16">
-          {MOCK_PRODUCTS
-            .filter(p => selectedCategory === 'All' || p.category === selectedCategory)
-            .slice(0, 4)
+          {products
+            .filter(p =>
+              selectedCategory === 'All' ||
+              p.categories.some(cat => cat.toLowerCase() === selectedCategory.toLowerCase())
+            )
+            .slice(0, 8)
             .map(product => (
               <ProductCard key={product.id} product={product} />
             ))
@@ -242,7 +240,7 @@ const Home: React.FC = () => {
         </div>
 
         {/* If fewer than expected products */}
-        {MOCK_PRODUCTS.filter(p => selectedCategory === 'All' || p.category === selectedCategory).length === 0 && (
+        {products.filter(p => selectedCategory === 'All' || p.category === selectedCategory).length === 0 && (
           <div className="text-center py-16">
             <p className="text-stone-400 font-light italic">No products found in this category yet.</p>
           </div>

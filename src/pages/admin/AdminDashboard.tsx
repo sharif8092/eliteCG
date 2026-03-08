@@ -22,7 +22,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 
 const AdminDashboard: React.FC = () => {
-    const [isSyncing, setIsSyncing] = useState(false);
+    const [loading, setLoading] = useState(false);
     const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [productCount, setProductCount] = useState(0);
     const [blogCount, setBlogCount] = useState(0);
@@ -45,43 +45,27 @@ const AdminDashboard: React.FC = () => {
         getCounts();
     }, []);
 
-    const handleSyncData = async () => {
-        setIsSyncing(true);
+    const handleRefreshData = async () => {
         setSyncStatus('idle');
+        setLoading(true);
         try {
-            // Check if products already exist to avoid duplicates
-            const existing = await productService.getAllProducts();
-            if (existing.length > 5) {
-                if (!window.confirm('You already have products in your database. Syncing will add duplicates. Continue?')) {
-                    setIsSyncing(false);
-                    return;
-                }
-            }
-
-            // Sync Products
-            for (const product of MOCK_PRODUCTS) {
-                const { id, ...productData } = product;
-                await productService.addProduct(productData);
-            }
-
-            // Sync Blogs
-            for (const blog of MOCK_BLOGS) {
-                await blogService.addPost(blog);
-            }
-
-            setSyncStatus('success');
-            const [updatedP, updatedB] = await Promise.all([
+            const [products, blogs, allOrders, recent] = await Promise.all([
                 productService.getAllProducts(),
-                blogService.getAllPosts()
+                blogService.getAllPosts(),
+                orderService.getAllOrders(),
+                orderService.getRecentActivity()
             ]);
-            setProductCount(updatedP.length);
-            setBlogCount(updatedB.length);
+            setProductCount(products.length);
+            setBlogCount(blogs.length);
+            setTotalOrders(allOrders.length);
+            setRecentOrders(recent);
+            setSyncStatus('success');
             setTimeout(() => setSyncStatus('idle'), 3000);
         } catch (error) {
-            console.error('Sync error:', error);
+            console.error('Refresh error:', error);
             setSyncStatus('error');
         } finally {
-            setIsSyncing(false);
+            setLoading(false);
         }
     };
 
@@ -100,14 +84,14 @@ const AdminDashboard: React.FC = () => {
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-white/10 transition-colors" />
                     <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
                         <div className="max-w-xl">
-                            <h2 className="text-3xl font-serif italic mb-4">Connect Your Database</h2>
+                            <h2 className="text-3xl font-serif italic mb-4">WooCommerce Connected</h2>
                             <p className="text-emerald-100/70 text-sm leading-relaxed font-light font-sans">
-                                Your storefront is currently transitioning to a live database. Click "Sync Design Data" to upload the initial products to your Firestore so they appear across the whole website.
+                                Your storefront is successfully connected to WooCommerce. All products, orders, and categories are synced in real-time. Use the button to refresh dashboard metrics.
                             </p>
                         </div>
                         <button
-                            onClick={handleSyncData}
-                            disabled={isSyncing}
+                            onClick={handleRefreshData}
+                            disabled={loading}
                             className={`
                                 flex items-center gap-3 px-8 py-5 rounded-2xl font-bold text-xs uppercase tracking-[0.2em] transition-all font-sans
                                 ${syncStatus === 'success'
@@ -118,7 +102,7 @@ const AdminDashboard: React.FC = () => {
                                 shadow-xl disabled:opacity-50
                             `}
                         >
-                            {isSyncing ? (
+                            {loading ? (
                                 <Loader2 className="animate-spin" size={18} />
                             ) : syncStatus === 'success' ? (
                                 <CheckCircle2 size={18} />
@@ -127,7 +111,7 @@ const AdminDashboard: React.FC = () => {
                             ) : (
                                 <Database size={18} />
                             )}
-                            {isSyncing ? 'Uploading...' : syncStatus === 'success' ? 'Synced successfully' : 'Sync Design Data'}
+                            {loading ? 'Refreshing...' : syncStatus === 'success' ? 'Data Refreshed' : 'Refresh Metrics'}
                         </button>
                     </div>
                 </div>
@@ -172,8 +156,8 @@ const AdminDashboard: React.FC = () => {
                                                     <ShoppingBag size={20} />
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-bold text-stone-900 group-hover:text-emerald-600 transition-colors tracking-tight">Order #{order.id.slice(0, 8).toUpperCase()}</p>
-                                                    <p className="text-xs text-stone-400 font-medium font-sans capitalize">{order.status} • {new Date(order.date).toLocaleDateString()}</p>
+                                                    <p className="text-sm font-bold text-stone-900 group-hover:text-emerald-600 transition-colors tracking-tight">Order #{order.id.toUpperCase()}</p>
+                                                    <p className="text-xs text-stone-400 font-medium font-sans capitalize">{order.status} • {new Date(order.createdAt).toLocaleDateString()}</p>
                                                 </div>
                                             </div>
                                             <div className="text-right">

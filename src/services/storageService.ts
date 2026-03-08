@@ -1,63 +1,64 @@
-import {
-    ref,
-    uploadBytesResumable,
-    getDownloadURL,
-    deleteObject
-} from 'firebase/storage';
-import { storage } from '../firebase';
+import { wpService } from './wooCommerceService';
 
 export const storageService = {
     /**
-     * Upload a file to Firebase Storage
+     * Upload a file to WordPress Media Library
      * @param file The file object from input
-     * @param path The folder path in storage (e.g., 'products', 'blogs')
+     * @param _path Folder path (ignored for WP as it uses a flat structure or months)
      * @param onProgress Callback for upload progress
      */
     async uploadFile(
         file: File,
-        path: string,
+        _path: string,
         onProgress?: (progress: number) => void
     ): Promise<string> {
-        const timestamp = Date.now();
-        const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
-        const storagePath = `${path}/${timestamp}_${safeName}`;
-        const storageRef = ref(storage, storagePath);
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('title', file.name);
+        formData.append('alt_text', file.name);
+        formData.append('caption', file.name);
 
-        const uploadTask = uploadBytesResumable(storageRef, file);
-
-        return new Promise((resolve, reject) => {
-            uploadTask.on(
-                'state_changed',
-                (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    if (onProgress) onProgress(progress);
-                },
-                (error) => {
-                    console.error('Upload failed:', error);
-                    reject(error);
-                },
-                async () => {
-                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                    resolve(downloadURL);
+        const response = await wpService.post('/media', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+                'Content-Disposition': `attachment; filename="${file.name}"`
+            },
+            onUploadProgress: (progressEvent: any) => {
+                if (onProgress && progressEvent.total) {
+                    const progress = (progressEvent.loaded / progressEvent.total) * 100;
+                    onProgress(progress);
                 }
-            );
-        });
+            }
+        } as any);
+
+        // WordPress returns the full media object, we want the source URL
+        return (response.data as any).source_url;
     },
 
     /**
-     * Delete a file from Firebase Storage by its URL
-     * @param url The full download URL of the file
+     * Delete a file from WordPress Media Library by its URL
+     * Note: This is less efficient in WP than in Firebase because 
+     * we usually delete by ID. We'll try to find the ID first.
+     * @param url The full URL of the file
      */
     async deleteFile(url: string): Promise<void> {
         try {
-            // Extract the path from the Firebase Storage URL if possible, 
-            // or just use the reference if we have it.
-            // For simplicity in this project, we'll try to get a reference from the URL
-            const fileRef = ref(storage, url);
-            await deleteObject(fileRef);
+            // Find media by URL first to get ID
+            const filename = url.split('/').pop()?.split('?')[0];
+            if (!filename) return;
+
+            const searchResponse = await wpService.get('/media', {
+                params: { search: filename }
+            });
+
+            const media = (searchResponse.data as any[]).find(m => m.source_url === url);
+            if (media && media.id) {
+                await wpService.delete(`/media/${media.id}`, {
+                    params: { force: true }
+                });
+            }
         } catch (error) {
-            console.error('Delete failed:', error);
-            // Don't throw if delete fails (might be a mock URL)
+            console.error('WordPress Media Delete failed:', error);
         }
     }
 };

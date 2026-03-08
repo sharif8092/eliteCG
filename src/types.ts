@@ -1,10 +1,18 @@
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  count?: number;
+}
+
 export interface Product {
   id: string;
   name: string;
   description: string;
   price: number;
   originalPrice?: number;
-  category: string;
+  categories: string[];
   images: string[];
   imageAlts?: string[];
   stock: number;
@@ -86,4 +94,40 @@ export interface Order {
   shippingMethod?: string;
   shippingCost?: number;
   trackingNumber?: string;
+  billing?: {
+    first_name: string;
+    last_name: string;
+    address_1: string;
+    city: string;
+    postcode: string;
+    email: string;
+    phone: string;
+  };
+}
+
+export interface PaymentGateway {
+  id: string;
+  title: string;
+  description: string;
+  enabled: boolean;
+}
+
+export interface ShippingZone {
+  id: number;
+  name: string;
+  order: number;
+}
+
+export interface ShippingMethod {
+  id: number;
+  instance_id: number;
+  title: string;
+  method_id: string;
+  method_title: string;
+  enabled: boolean;
+  settings: {
+    cost?: {
+      value: string;
+    }
+  };
 }

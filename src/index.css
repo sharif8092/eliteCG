@@ -20,3 +20,30 @@
 .text-balance {
   text-wrap: balance;
 }
+
+/* Product Description Styles (WooCommerce HTML) */
+.product-description {
+  @apply space-y-4;
+}
+
+.product-description p {
+  @apply mb-4 leading-relaxed;
+}
+
+.product-description img, 
+.product-description figure {
+  @apply max-w-full h-auto rounded-2xl my-6 mx-auto block;
+}
+
+.product-description figcaption {
+  @apply text-center text-[10px] uppercase tracking-widest text-stone-400 mt-2 font-bold;
+}
+
+.product-description ul, 
+.product-description ol {
+  @apply list-inside list-disc space-y-2 my-4;
+}
+
+.product-description a {
+  @apply text-emerald-800 underline underline-offset-4 decoration-emerald-800/30 hover:decoration-emerald-800 transition-all;
+}

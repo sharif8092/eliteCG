@@ -142,13 +142,13 @@ const AdminOrders: React.FC = () => {
                                         <tr key={order.id} className="hover:bg-stone-50/30 transition-colors group">
                                             <td className="px-8 py-5">
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-stone-900">#{order.id.slice(0, 8).toUpperCase()}</span>
-                                                    <span className="text-[10px] text-stone-400 font-medium font-sans">User: {order.userId.slice(0, 8)}</span>
+                                                    <span className="text-sm font-bold text-stone-900">#{order.id}</span>
+                                                    <span className="text-[10px] text-stone-400 font-medium font-sans">User: {order.userId}</span>
                                                 </div>
                                             </td>
                                             <td className="px-8 py-5">
                                                 <div className="text-sm text-stone-600 font-sans">
-                                                    {new Date(order.date).toLocaleDateString()}
+                                                    {new Date(order.createdAt).toLocaleDateString()}
                                                 </div>
                                             </td>
                                             <td className="px-8 py-5">
@@ -237,12 +237,12 @@ const AdminOrders: React.FC = () => {
                                     <div className="space-y-3">
                                         {selectedOrder.items.map((item, idx) => (
                                             <div key={idx} className="flex items-center gap-4 p-4 bg-stone-50 rounded-2xl border border-stone-100">
-                                                <div className="w-16 h-16 rounded-xl overflow-hidden bg-white border border-stone-200 flex-shrink-0">
-                                                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                                <div className="w-16 h-16 rounded-xl overflow-hidden bg-white border border-stone-200 flex-shrink-0 flex items-center justify-center text-stone-200">
+                                                    <ShoppingBag size={24} />
                                                 </div>
                                                 <div className="flex-1">
                                                     <p className="text-sm font-bold text-stone-900">{item.name}</p>
-                                                    <p className="text-[10px] text-stone-400 font-medium uppercase tracking-tight mt-0.5 font-sans">Qty: {item.quantity} • Size: {item.size || 'N/A'}</p>
+                                                    <p className="text-[10px] text-stone-400 font-medium uppercase tracking-tight mt-0.5 font-sans">Qty: {item.quantity}</p>
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="text-sm font-bold text-stone-900">₹{(item.price * item.quantity).toLocaleString()}</p>
@@ -259,16 +259,20 @@ const AdminOrders: React.FC = () => {
                                         <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400/80 mb-4">Customer Details</p>
                                         <div className="grid grid-cols-2 gap-x-8 gap-y-4">
                                             <div>
-                                                <p className="text-[9px] font-bold uppercase text-emerald-400/50 mb-1">Shipping Name</p>
-                                                <p className="text-sm font-medium">Customer User #{selectedOrder.userId.slice(0, 4)}</p>
+                                                <p className="text-[9px] font-bold uppercase text-emerald-400/50 mb-1">Billing Name</p>
+                                                <p className="text-sm font-medium">{selectedOrder.billing?.first_name} {selectedOrder.billing?.last_name}</p>
                                             </div>
                                             <div>
                                                 <p className="text-[9px] font-bold uppercase text-emerald-400/50 mb-1">Contact</p>
-                                                <p className="text-sm font-medium">+91 00000 00000</p>
+                                                <p className="text-sm font-medium">{selectedOrder.billing?.phone || 'N/A'}</p>
                                             </div>
                                             <div className="col-span-2">
-                                                <p className="text-[9px] font-bold uppercase text-emerald-400/50 mb-1">Full Address</p>
-                                                <p className="text-sm font-light leading-relaxed">Noor Islamic Store Customer Address, Sector 4, Bangalore, KA, 560001</p>
+                                                <p className="text-[9px] font-bold uppercase text-emerald-400/50 mb-1">Shipping Address</p>
+                                                <p className="text-sm font-light leading-relaxed">{selectedOrder.shippingAddress}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-bold uppercase text-emerald-400/50 mb-1">Payment</p>
+                                                <p className="text-sm font-medium">{selectedOrder.paymentMethod}</p>
                                             </div>
                                         </div>
                                     </div>

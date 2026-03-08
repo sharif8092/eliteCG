@@ -28,6 +28,7 @@ const AdminSidebar: React.FC = () => {
     const menuItems = [
         { label: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
         { label: 'Products', icon: Package, path: '/admin/products' },
+        { label: 'Categories', icon: Tag, path: '/admin/categories' },
         { label: 'Orders', icon: ShoppingBag, path: '/admin/orders' },
         { label: 'Offers & Banners', icon: Tag, path: '/admin/offers' },
         { label: 'Blog Posts', icon: FileText, path: '/admin/blogs' },
