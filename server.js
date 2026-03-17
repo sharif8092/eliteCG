@@ -31,29 +31,35 @@ const wooClient = axios.create({
 });
 
 app.get('/api/woo/products', async (req, res) => {
+    console.log(`Fetching products from: ${WC_URL}/wp-json/wc/v3/products`);
     try {
         const response = await wooClient.get('/products', { params: req.query });
         res.json(response.data);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch products' });
+        console.error('WooCommerce API Error (Products):', error.response?.data || error.message);
+        res.status(error.response?.status || 500).json(error.response?.data || { error: 'Failed to fetch products' });
     }
 });
 
 app.get('/api/woo/products/categories', async (req, res) => {
+    console.log(`Fetching categories from: ${WC_URL}/wp-json/wc/v3/products/categories`);
     try {
         const response = await wooClient.get('/products/categories', { params: req.query });
         res.json(response.data);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch categories' });
+        console.error('WooCommerce API Error (Categories):', error.response?.data || error.message);
+        res.status(error.response?.status || 500).json(error.response?.data || { error: 'Failed to fetch categories' });
     }
 });
 
 app.post('/api/woo/orders', async (req, res) => {
+    console.log(`Creating order at: ${WC_URL}/wp-json/wc/v3/orders`);
     try {
         const response = await wooClient.post('/orders', req.body);
         res.status(201).json(response.data);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to create order' });
+        console.error('WooCommerce API Error (Orders):', error.response?.data || error.message);
+        res.status(error.response?.status || 500).json(error.response?.data || { error: 'Failed to create order' });
     }
 });
 
