@@ -21,7 +21,11 @@ export const offerService = {
     // Get all offers (Coupons)
     async getAllOffers(): Promise<Offer[]> {
         const response = await wooCommerceService.get('/coupons');
-        return (response.data as any[]).map(mapWooCouponToInternal);
+        if (!Array.isArray(response.data)) {
+            console.error('Invalid coupons response format:', response.data);
+            return [];
+        }
+        return response.data.map(mapWooCouponToInternal);
     },
 
     // Get active offers

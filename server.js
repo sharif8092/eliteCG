@@ -77,6 +77,17 @@ app.post('/api/woo/orders', async (req, res) => {
     }
 });
 
+app.get('/api/woo/coupons', async (req, res) => {
+    console.log(`Fetching coupons from: ${WC_URL}/wp-json/wc/v3/coupons`);
+    try {
+        const response = await wooClient.get('/coupons', { params: req.query });
+        res.json(response.data);
+    } catch (error) {
+        console.error('WooCommerce API Error (Coupons):', error.response?.data || error.message);
+        res.status(error.response?.status || 500).json(error.response?.data || { error: 'Failed to fetch coupons' });
+    }
+});
+
 // Serve frontend static files
 app.use(express.static(path.join(__dirname, 'dist')));
 
