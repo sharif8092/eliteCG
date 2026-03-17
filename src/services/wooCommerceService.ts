@@ -2,6 +2,7 @@ import axios from 'axios';
 
 // Point to our new Express backend proxy
 // Use relative path so it works on both localhost and production
+// v0.0.1 - Force update
 const BACKEND_URL = '/api/woo';
 
 const wooCommerceService = axios.create({
