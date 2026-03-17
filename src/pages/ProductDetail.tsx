@@ -5,7 +5,7 @@ import {
   ArrowRight, Star, ShieldCheck, Truck, Clock, Mail, Package, 
   CreditCard, RotateCcw, Quote, Sparkles, ChevronLeft, 
   ChevronRight, Check, Heart, ShoppingCart, ShoppingBag, MessageCircle,
-  ZoomIn, MessageSquare, Send, X, Phone
+  ZoomIn, MessageSquare, Send, X, Phone, TrendingUp, Info, Activity
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
@@ -35,6 +35,14 @@ const ProductDetail: React.FC = () => {
   const [isZoomed, setIsZoomed] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedBranding, setSelectedBranding] = useState<string>('None');
+
+  const brandingOptions = [
+    { id: 'none', name: 'None', price: 0, icon: <X size={14} /> },
+    { id: 'screen', name: 'Screen Printing', price: 15, icon: <Check size={14} /> },
+    { id: 'laser', name: 'Laser Engraving', price: 25, icon: <Sparkles size={14} /> },
+    { id: 'digital', name: 'Digital Print', price: 20, icon: <Send size={14} /> },
+  ];
 
   // Review form state
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -57,13 +65,15 @@ const ProductDetail: React.FC = () => {
   }, [profile]);
 
   const getTieredPrice = (price: number, qty: number) => {
-    if (qty >= 1000) return price * 0.7;
-    if (qty >= 500) return price * 0.8;
-    if (qty >= 200) return price * 0.9;
+    if (qty >= 1000) return price * 0.7; // 30% OFF
+    if (qty >= 500) return price * 0.8;  // 20% OFF
+    if (qty >= 200) return price * 0.9;  // 10% OFF
     return price;
   };
 
-  const currentUnitPrice = product ? getTieredPrice(product.price, quantity) : 0;
+  const brandingPrice = brandingOptions.find(b => b.name === selectedBranding)?.price || 0;
+  const basePrice = product ? getTieredPrice(product.price, quantity) : 0;
+  const currentUnitPrice = basePrice + brandingPrice;
 
   useEffect(() => {
     const fetchProductData = async () => {
@@ -279,29 +289,77 @@ const ProductDetail: React.FC = () => {
           />
 
           {/* Tiered Pricing Table */}
-          <div className="bg-stone-50 rounded-2xl p-8 border border-stone-100 max-w-lg">
-            <div className="flex items-center justify-between mb-6">
-              <h4 className="text-[10px] uppercase tracking-[0.2em] font-bold text-stone-900">Bulk Pricing Tiers</h4>
-              <span className="bg-emerald-100 text-emerald-800 text-[8px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">Best Value</span>
+          <div className="bg-white rounded-3xl p-8 border border-stone-100 shadow-sm max-w-lg">
+            <div className="flex items-center justify-between mb-8">
+              <div className="space-y-1">
+                <h4 className="text-[10px] uppercase tracking-[0.2em] font-bold text-stone-900">Volume Advantage</h4>
+                <p className="text-[10px] text-stone-400 font-medium">Select a tier to update quantity</p>
+              </div>
+              <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full border border-emerald-100">
+                <TrendingUp size={12} />
+                <span className="text-[9px] font-bold uppercase tracking-widest">Bulk Savings</span>
+              </div>
             </div>
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
-                { range: '50-200', discount: 'Base' },
-                { range: '200-500', discount: '10% OFF' },
-                { range: '500-1000', discount: '20% OFF' },
-                { range: '1000+', discount: '30% OFF' },
-              ].map((tier, idx) => (
-                <div key={idx} className={`text-center p-3 rounded-xl border transition-all duration-300 ${
-                  (idx === 0 && quantity >= 50 && quantity < 200) ||
-                  (idx === 1 && quantity >= 200 && quantity < 500) ||
-                  (idx === 2 && quantity >= 500 && quantity < 1000) ||
-                  (idx === 3 && quantity >= 1000)
-                    ? 'bg-white border-emerald-500 shadow-lg scale-105'
-                    : 'bg-transparent border-transparent opacity-60'
-                }`}>
-                  <div className="text-[9px] text-stone-400 uppercase tracking-tighter mb-1 font-bold">{tier.range}</div>
-                  <div className="text-[10px] text-emerald-700 font-bold uppercase">{tier.discount}</div>
-                </div>
+                { range: '50-200', qty: 50, discount: 'Base', desc: 'Starting at' },
+                { range: '200-500', qty: 200, discount: '10% OFF', desc: 'Volume' },
+                { range: '500-1000', qty: 500, discount: '20% OFF', desc: 'Wholesale' },
+                { range: '1000+', qty: 1000, discount: '30% OFF', desc: 'Partner' },
+              ].map((tier, idx) => {
+                const isActive = (idx === 0 && quantity >= 50 && quantity < 200) ||
+                                (idx === 1 && quantity >= 200 && quantity < 500) ||
+                                (idx === 2 && quantity >= 500 && quantity < 1000) ||
+                                (idx === 3 && quantity >= 1000);
+                
+                return (
+                  <button 
+                    key={idx} 
+                    onClick={() => setQuantity(tier.qty)}
+                    className={`text-left p-4 rounded-2xl border transition-all duration-300 group ${
+                      isActive
+                        ? 'bg-stone-900 border-stone-900 shadow-xl shadow-stone-900/10 scale-105'
+                        : 'bg-stone-50 border-stone-100 hover:border-stone-300'
+                    }`}
+                  >
+                    <div className={`text-[8px] uppercase tracking-tighter mb-1 font-bold ${isActive ? 'text-stone-400' : 'text-stone-400 group-hover:text-stone-500'}`}>{tier.desc}</div>
+                    <div className={`text-[11px] font-bold mb-1 ${isActive ? 'text-white' : 'text-stone-900'}`}>{tier.range}</div>
+                    <div className={`text-[9px] font-bold uppercase ${isActive ? 'text-emerald-400' : 'text-emerald-600'}`}>{tier.discount}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Branding Options */}
+          <div className="space-y-6 max-w-lg">
+            <div className="flex items-center justify-between">
+              <h4 className="text-[10px] uppercase tracking-[0.2em] font-bold text-stone-900">Custom Branding</h4>
+              <span className="text-[9px] text-stone-400 font-medium italic">Mockups provided post-order</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {brandingOptions.map((opt) => (
+                <button
+                  key={opt.id}
+                  onClick={() => setSelectedBranding(opt.name)}
+                  className={`flex items-center gap-3 p-4 rounded-2xl border text-left transition-all ${
+                    selectedBranding === opt.name
+                      ? 'bg-emerald-50 border-emerald-500 text-emerald-900'
+                      : 'bg-white border-stone-100 hover:border-stone-200 text-stone-600'
+                  }`}
+                >
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    selectedBranding === opt.name ? 'bg-emerald-500 text-white' : 'bg-stone-50 text-stone-400'
+                  }`}>
+                    {opt.icon}
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-tight">{opt.name}</div>
+                    <div className="text-[9px] opacity-60">
+                      {opt.price > 0 ? `+₹${opt.price}/unit` : 'Free'}
+                    </div>
+                  </div>
+                </button>
               ))}
             </div>
           </div>
@@ -417,6 +475,29 @@ const ProductDetail: React.FC = () => {
             </div>
           </div>
 
+          {/* Product Specifications Table */}
+          <div className="pt-12 border-t border-stone-100">
+            <div className="flex items-center gap-3 mb-8">
+              <Activity className="text-stone-900" size={18} />
+              <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-900">Technical Specifications</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-4">
+              {[
+                { label: 'Minimum Order', value: '50 Units' },
+                { label: 'Lead Time', value: '7-12 Business Days' },
+                { label: 'Customization', value: 'Available' },
+                { label: 'Material', value: 'Premium Grade' },
+                { label: 'Quality Check', value: 'Triple Inspection' },
+              ].map((spec, i) => (
+                <div key={i} className="flex items-center justify-between py-3 border-b border-stone-50 group hover:bg-stone-50/50 transition-colors px-2 rounded-lg">
+                  <span className="text-[10px] text-stone-400 uppercase tracking-widest font-medium">{spec.label}</span>
+                  <span className="text-[11px] text-stone-900 font-bold">{spec.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-12 pt-12 border-t border-stone-100">
             <div className="flex items-start space-x-4">
               <div className="w-10 h-10 rounded-full bg-stone-50 flex items-center justify-center flex-shrink-0">
@@ -479,6 +560,21 @@ const ProductDetail: React.FC = () => {
               >
                 Inquire about Bulk Order <ArrowRight size={14} />
               </Link>
+            </div>
+            
+            {/* B2B Trust Bar */}
+            <div className="flex flex-wrap items-center gap-8 py-8 border-t border-stone-100">
+              {[
+                { icon: <CreditCard size={14} />, label: 'GST Invoicing' },
+                { icon: <Package size={14} />, label: 'Sample Unit' },
+                { icon: <Mail size={14} />, label: 'Pan-India Logistics' },
+                { icon: <RotateCcw size={14} />, label: 'Quality Guarantee' },
+              ].map((trust, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <div className="text-stone-400">{trust.icon}</div>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-stone-900">{trust.label}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>

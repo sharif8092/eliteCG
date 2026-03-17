@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Send, CheckCircle2, Building2, User, Mail, Phone, MessageSquare } from 'lucide-react';
+import { X, Send, CheckCircle2, Building2, User, Mail, Phone, MessageSquare, Calendar, Upload } from 'lucide-react';
 import { quotationService, QuotationData } from '../services/quotationService';
 import { CartItem } from '../types';
 
@@ -20,8 +20,11 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ isOpen, onClose, items, o
     company: '',
     email: '',
     phone: '',
-    message: ''
+    message: '',
+    targetDate: '',
+    brandingType: 'None'
   });
+  const [logo, setLogo] = useState<File | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,13 +64,14 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ isOpen, onClose, items, o
         let message = `Hi Ababil Team,\n\nI just submitted a formal quotation request through the website. Here are my details:\n\n`;
         message += `*Name:* ${formData.firstName} ${formData.lastName}\n`;
         message += `*Company:* ${formData.company}\n`;
-        message += `*Phone:* ${formData.phone}\n\n`;
+        message += `*Phone:* ${formData.phone}\n`;
+        message += `*Target Date:* ${formData.targetDate}\n\n`;
         message += `*Requested Items:*\n`;
         items.forEach(item => {
           message += `- ${item.name} (Qty: ${item.quantity})\n`;
         });
         if (formData.message) {
-          message += `\n*Details:* ${formData.message}`;
+          message += `\n*Special Requirements:* ${formData.message}`;
         }
         
         const whatsappUrl = `https://wa.me/919000000000?text=${encodeURIComponent(message)}`;
@@ -227,8 +231,39 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ isOpen, onClose, items, o
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-3">
+                      <label className="text-[10px] uppercase tracking-widest font-bold text-stone-400 ml-1">Target Delivery Date</label>
+                      <div className="relative">
+                        <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-stone-300" size={18} />
+                        <input
+                          required
+                          type="date"
+                          value={formData.targetDate}
+                          onChange={e => setFormData({...formData, targetDate: e.target.value})}
+                          className="w-full bg-stone-50 border-2 border-transparent rounded-[1.25rem] py-5 pl-14 pr-6 text-sm focus:bg-white focus:border-emerald-500/30 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-[10px] uppercase tracking-widest font-bold text-stone-400 ml-1">Company Logo (Optional)</label>
+                      <div className="relative">
+                        <Upload className="absolute left-5 top-1/2 -translate-y-1/2 text-stone-300" size={18} />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={e => setLogo(e.target.files ? e.target.files[0] : null)}
+                          className="w-full bg-stone-50 border-2 border-transparent rounded-[1.25rem] py-5 pl-14 pr-6 text-xs file:hidden cursor-pointer focus:bg-white focus:border-emerald-500/30 outline-none transition-all"
+                        />
+                        <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-bold text-stone-400 pointer-events-none">
+                          {logo ? logo.name.slice(0, 15) + '...' : 'Upload File'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="space-y-3">
-                    <label className="text-[10px] uppercase tracking-widest font-bold text-stone-400 ml-1">Inquiry Details (Branding, Timeline, etc.)</label>
+                    <label className="text-[10px] uppercase tracking-widest font-bold text-stone-400 ml-1">Inquiry Details (Branding, Special Requirements)</label>
                     <div className="relative">
                       <MessageSquare className="absolute left-5 top-6 text-stone-300" size={18} />
                       <textarea
@@ -236,7 +271,7 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ isOpen, onClose, items, o
                         value={formData.message}
                         onChange={e => setFormData({...formData, message: e.target.value})}
                         className="w-full bg-stone-50 border-2 border-transparent rounded-[1.5rem] py-5 pl-14 pr-6 text-sm focus:bg-white focus:border-emerald-500/30 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all resize-none"
-                        placeholder="Mention any specific logo placement, custom packaging needs, or delivery deadlines..."
+                        placeholder="Mention any specific logo placement or custom packaging needs..."
                       />
                     </div>
                   </div>
