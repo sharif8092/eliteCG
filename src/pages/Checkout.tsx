@@ -31,7 +31,7 @@ const Checkout: React.FC = () => {
   });
 
   // Calculate total
-  const shippingCost = selectedShipping ? parseFloat(selectedShipping.settings.cost?.value || '0') : 0;
+  const shippingCost = selectedShipping ? parseFloat(selectedShipping.settings.cost?.value || '0') : (shippingMethods.length === 0 ? 99 : 0);
   const total = cartTotal + shippingCost;
 
   useEffect(() => {
@@ -95,7 +95,7 @@ const Checkout: React.FC = () => {
     setLoading(true);
     try {
       const orderData = {
-        customer_id: user.uid, // Using UID as fallback ID
+        customer_id: profile?.wcCustomerId || 0, // Using real WC ID if synced
         payment_method: formData.paymentMethod,
         payment_method_title: paymentGateways.find(g => g.id === formData.paymentMethod)?.title || 'Payment',
         set_paid: false,
@@ -119,21 +119,32 @@ const Checkout: React.FC = () => {
           product_id: parseInt(item.id),
           quantity: item.quantity
         })),
-        shipping_lines: selectedShipping ? [
-          {
-            method_id: selectedShipping.method_id,
-            method_title: selectedShipping.method_title,
-            total: selectedShipping.settings.cost?.value || '0'
-          }
-        ] : []
+        shipping_lines: selectedShipping 
+          ? [
+              {
+                method_id: selectedShipping.method_id,
+                method_title: selectedShipping.method_title,
+                total: selectedShipping.settings.cost?.value || '0'
+              }
+            ] 
+          : shippingMethods.length === 0 
+            ? [
+                {
+                  method_id: 'standard_shipping',
+                  method_title: 'Standard Shipping',
+                  total: '99'
+                }
+              ]
+            : []
       };
 
       await orderService.createOrder(orderData);
       setSuccess(true);
       clearCart();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Checkout error:', error);
-      alert('Failed to place order. Please try again.');
+      const errorMsg = error.response?.data?.message || error.message || 'Failed to place order.';
+      alert(`Error: ${errorMsg}. Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -263,40 +274,65 @@ const Checkout: React.FC = () => {
                 <Loader2 className="animate-spin" size={16} />
                 Scanning delivery partners...
               </div>
-            ) : shippingMethods.length === 0 ? (
-              <div className="p-8 border border-stone-100 rounded-[2rem] text-stone-400 italic">
-                No shipping methods available for your location.
-              </div>
             ) : (
               <div className="space-y-4">
-                {shippingMethods.map(method => (
+                {shippingMethods.length === 0 ? (
+                  /* Fallback Shipping Method if none configured in WooCommerce */
                   <label
-                    key={method.id}
-                    className={`flex items-center justify-between p-8 border rounded-[2rem] cursor-pointer transition-all group ${selectedShipping?.id === method.id ? 'border-stone-900 bg-stone-50' : 'border-stone-100 hover:bg-stone-50'}`}
+                    className="flex items-center justify-between p-8 border rounded-[2rem] cursor-pointer transition-all border-stone-900 bg-stone-50"
                   >
                     <div className="flex items-center">
                       <input
                         type="radio"
                         name="shipping"
-                        checked={selectedShipping?.id === method.id}
-                        onChange={() => setSelectedShipping(method)}
+                        checked={true}
+                        readOnly
                         className="w-4 h-4 text-stone-900 focus:ring-stone-900 border-stone-300"
                       />
                       <div className="ml-6 flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 group-hover:text-stone-900 transition-colors">
+                        <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-900">
                           <Truck size={18} />
                         </div>
                         <div>
-                          <span className="block text-sm font-bold uppercase tracking-widest text-stone-900">{method.method_title}</span>
-                          <span className="block text-[10px] text-stone-400 font-light mt-1">Managed by WooCommerce</span>
+                          <span className="block text-sm font-bold uppercase tracking-widest text-stone-900">Standard Shipping</span>
+                          <span className="block text-[10px] text-stone-400 font-light mt-1">Reliable delivery service</span>
                         </div>
                       </div>
                     </div>
                     <span className="text-[10px] uppercase tracking-widest text-stone-900 font-bold">
-                      {parseFloat(method.settings.cost?.value || '0') === 0 ? 'Complimentary' : `₹${method.settings.cost?.value}`}
+                      ₹99
                     </span>
                   </label>
-                ))}
+                ) : (
+                  shippingMethods.map(method => (
+                    <label
+                      key={method.id}
+                      className={`flex items-center justify-between p-8 border rounded-[2rem] cursor-pointer transition-all group ${selectedShipping?.id === method.id ? 'border-stone-900 bg-stone-50' : 'border-stone-100 hover:bg-stone-50'}`}
+                    >
+                      <div className="flex items-center">
+                        <input
+                          type="radio"
+                          name="shipping"
+                          checked={selectedShipping?.id === method.id}
+                          onChange={() => setSelectedShipping(method)}
+                          className="w-4 h-4 text-stone-900 focus:ring-stone-900 border-stone-300"
+                        />
+                        <div className="ml-6 flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 group-hover:text-stone-900 transition-colors">
+                            <Truck size={18} />
+                          </div>
+                          <div>
+                            <span className="block text-sm font-bold uppercase tracking-widest text-stone-900">{method.method_title}</span>
+                            <span className="block text-[10px] text-stone-400 font-light mt-1">Managed by WooCommerce</span>
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-[10px] uppercase tracking-widest text-stone-900 font-bold">
+                        {parseFloat(method.settings.cost?.value || '0') === 0 ? 'Complimentary' : `₹${method.settings.cost?.value}`}
+                      </span>
+                    </label>
+                  ))
+                )}
               </div>
             )}
           </div>

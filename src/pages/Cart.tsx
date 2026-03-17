@@ -2,10 +2,15 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, ShoppingBag, ArrowRight, Minus, Plus, Gift } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useQuotation } from '../hooks/useQuotation';
+import QuotationForm from '../components/QuotationForm';
+import { useState } from 'react';
 
 const Cart: React.FC = () => {
   const { items, removeFromCart, updateQuantity, clearCart, total, itemCount } = useCart();
   const navigate = useNavigate();
+  const { getQuotationLink, isMobile } = useQuotation();
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   if (items.length === 0) {
     return (
@@ -13,10 +18,10 @@ const Cart: React.FC = () => {
         <div className="w-24 h-24 bg-stone-50 rounded-full flex items-center justify-center mx-auto mb-12">
           <ShoppingBag className="text-stone-300" size={32} />
         </div>
-        <h2 className="text-4xl font-serif text-stone-900 italic mb-6">Your bag is empty</h2>
-        <p className="text-stone-400 mb-12 font-light">Explore our curated collection to find your next piece.</p>
+        <h2 className="text-4xl font-serif text-stone-900 italic mb-6">Your quotation list is empty</h2>
+        <p className="text-stone-400 mb-12 font-light">Explore our corporate catalog to find the perfect gifts for your brand.</p>
         <Link to="/products" className="text-stone-900 font-bold text-[10px] uppercase tracking-widest border-b border-stone-900 pb-1 inline-block">
-          Explore Collection
+          Explore Corporate Gifts
         </Link>
       </div>
     );
@@ -27,9 +32,9 @@ const Cart: React.FC = () => {
       <div className="max-w-3xl mb-16">
         <span className="text-emerald-800 text-[10px] uppercase tracking-[0.4em] font-bold mb-4 block">Your Selection</span>
         <h1 className="text-5xl md:text-7xl font-serif text-stone-900 leading-tight">
-          Shopping <span className="italic">Bag</span>
+          Quotation <span className="italic">List</span>
         </h1>
-        <p className="text-stone-400 mt-6 font-light">{itemCount} pieces curated</p>
+        <p className="text-stone-400 mt-6 font-light">{itemCount} items for inquiry</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-24">
@@ -50,6 +55,12 @@ const Cart: React.FC = () => {
                   <div>
                     <span className="text-[9px] uppercase tracking-[0.3em] text-stone-400 font-bold mb-2 block">{item.category}</span>
                     <h3 className="text-2xl font-serif text-stone-900 group-hover:text-emerald-800 transition-colors">{item.name}</h3>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-[10px] text-stone-400 uppercase tracking-widest font-bold">Unit: ₹{item.price.toLocaleString()}</span>
+                      {item.price < (item.originalPrice || item.price) && (
+                        <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">Bulk Discount Applied</span>
+                      )}
+                    </div>
                     {item.isFreeGift && (
                       <span className="inline-flex items-center gap-1.5 mt-2 text-[10px] uppercase tracking-widest font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
                         <Gift size={12} /> Free Gift — Orders Above ₹2,999
@@ -68,9 +79,20 @@ const Cart: React.FC = () => {
                 <div className="mt-8 flex justify-between items-center">
                   {!item.isFreeGift ? (
                     <div className="flex items-center border border-stone-100 rounded-full px-6 py-2">
-                      <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="text-stone-400 hover:text-stone-900 transition-colors"><Minus size={12} /></button>
+                      <button
+                        onClick={() => updateQuantity(item.id, Math.max(50, item.quantity - 1))}
+                        className="text-stone-400 hover:text-stone-900 transition-colors disabled:opacity-30"
+                        disabled={item.quantity <= 50}
+                      >
+                        <Minus size={12} />
+                      </button>
                       <span className="mx-6 font-bold text-xs text-stone-900 w-4 text-center">{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="text-stone-400 hover:text-stone-900 transition-colors"><Plus size={12} /></button>
+                      <button
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        className="text-stone-400 hover:text-stone-900 transition-colors"
+                      >
+                        <Plus size={12} />
+                      </button>
                     </div>
                   ) : (
                     <span className="text-[10px] uppercase tracking-widest font-bold text-emerald-600">Qty: 1</span>
@@ -89,7 +111,7 @@ const Cart: React.FC = () => {
               className="group flex items-center space-x-3 text-stone-400 hover:text-red-500 transition-all"
             >
               <Trash2 size={14} className="group-hover:scale-110 transition-transform" />
-              <span className="text-[9px] uppercase tracking-widest font-bold">Empty Shopping Bag</span>
+              <span className="text-[9px] uppercase tracking-widest font-bold">Clear Quotation List</span>
             </button>
           </div>
         </div>
@@ -97,7 +119,7 @@ const Cart: React.FC = () => {
         {/* Summary */}
         <div className="w-full lg:w-[400px]">
           <div className="bg-white p-12 rounded-[3rem] border border-stone-100 shadow-2xl sticky top-32">
-            <h2 className="text-2xl font-serif text-stone-900 mb-10">Order Summary</h2>
+            <h2 className="text-2xl font-serif text-stone-900 mb-10">Quotation Summary</h2>
             <div className="space-y-6 text-sm">
               <div className="flex justify-between text-stone-400 font-light">
                 <span className="uppercase tracking-widest text-[10px] font-bold">Subtotal</span>
@@ -113,18 +135,25 @@ const Cart: React.FC = () => {
               </div>
             </div>
             <button
-              onClick={() => navigate('/checkout')}
-              className="w-full mt-12 bg-stone-900 text-white py-5 rounded-full font-bold text-xs uppercase tracking-[0.2em] flex items-center justify-center space-x-4 hover:bg-emerald-900 transition-all shadow-2xl"
+              onClick={() => setIsFormOpen(true)}
+              className="w-full mt-12 bg-emerald-900 text-white py-5 rounded-full font-bold text-xs uppercase tracking-[0.2em] flex items-center justify-center space-x-4 hover:bg-stone-900 transition-all shadow-2xl"
             >
-              <span>Secure Checkout</span>
+              <span>Request Final Quote</span>
               <ArrowRight size={16} />
             </button>
             <p className="mt-6 text-center text-[9px] uppercase tracking-widest text-stone-300 font-bold">
-              Taxes calculated at checkout
+              Shipping & Branding costs shared post-request
             </p>
           </div>
         </div>
       </div>
+      
+      <QuotationForm 
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        items={items}
+        onSuccess={() => clearCart()}
+      />
     </div>
   );
 };

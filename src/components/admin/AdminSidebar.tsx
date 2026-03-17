@@ -13,15 +13,13 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
-import { auth } from '../../firebase';
-import { signOut } from 'firebase/auth';
-
+import { useAuth } from '../../context/AuthContext';
 const AdminSidebar: React.FC = () => {
+    const { logout } = useAuth();
     const location = useLocation();
 
     const handleLogout = async () => {
-        localStorage.removeItem('auth_bypass');
-        await signOut(auth);
+        await logout();
         window.location.href = '/';
     };
 

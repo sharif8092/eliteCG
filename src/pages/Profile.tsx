@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { orderService } from '../services/orderService';
+import { Order } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { User, Mail, Phone, MapPin, Save, Loader2, CheckCircle2, ShieldCheck, ArrowRight } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Save, Loader2, CheckCircle2, ShieldCheck, ArrowRight, LogOut, Package, Clock, Truck } from 'lucide-react';
 
 const Profile: React.FC = () => {
-  const { profile, updateProfile, isAdmin } = useAuth();
+  const { profile, updateProfile, isAdmin, logout } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+
   const [formData, setFormData] = useState({
     displayName: '',
     email: '',
@@ -23,6 +29,20 @@ const Profile: React.FC = () => {
         phone: profile.phone || '',
         address: profile.address || ''
       });
+
+      // Fetch recent orders
+      const fetchRecentOrders = async () => {
+        try {
+          const data = await orderService.getUserOrders(profile.email, profile.wcCustomerId);
+          setOrders(data.slice(0, 3)); // Only show last 3 on profile
+        } catch (err) {
+          console.error('Error fetching orders for profile:', err);
+        } finally {
+          setOrdersLoading(false);
+        }
+      };
+      
+      fetchRecentOrders();
     }
   }, [profile]);
 
@@ -98,15 +118,26 @@ const Profile: React.FC = () => {
                 <p className="text-sm text-emerald-100/70 mb-8 font-light leading-relaxed">
                   Manage products, view analytics, update blog posts, and control active offers.
                 </p>
-                <Link
-                  to="/admin"
-                  className="group flex items-center justify-between w-full bg-white text-emerald-900 px-6 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-emerald-50 transition-all"
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="group flex items-center justify-between w-full bg-white text-emerald-900 px-6 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-emerald-50 transition-all mb-4"
                 >
                   Manage Store
                   <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                </Link>
+                </button>
               </motion.div>
             )}
+
+            <button
+              onClick={async () => {
+                await logout();
+                navigate('/');
+              }}
+              className="group flex items-center justify-center w-full bg-stone-900 text-white px-6 py-5 rounded-[2rem] font-bold text-[10px] uppercase tracking-[0.2em] hover:bg-red-900 transition-all shadow-xl space-x-4"
+            >
+              <LogOut size={16} className="group-hover:-translate-x-1 transition-transform" />
+              <span>Sign Out</span>
+            </button>
           </div>
         </div>
 
@@ -198,6 +229,72 @@ const Profile: React.FC = () => {
               </AnimatePresence>
             </div>
           </form>
+
+          {/* Recent Orders Section */}
+          <div className="mt-24 pt-24 border-t border-stone-100 space-y-12">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-serif text-stone-900">Recent <span className="italic">Orders</span></h2>
+                <p className="text-[10px] uppercase tracking-widest text-stone-400 font-bold mt-2">Track your active journeys</p>
+              </div>
+              <button
+                onClick={() => navigate('/orders')}
+                className="text-stone-900 font-bold text-[10px] uppercase tracking-widest border-b border-stone-900 pb-1"
+              >
+                View All Archives
+              </button>
+            </div>
+
+            {ordersLoading ? (
+              <div className="flex items-center space-x-4 text-stone-300">
+                <Loader2 className="animate-spin" size={16} />
+                <span className="text-[10px] uppercase tracking-widest font-bold">Retrieving history...</span>
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="bg-stone-50 rounded-[2rem] p-10 text-center">
+                <Package className="mx-auto text-stone-200 mb-4" size={32} />
+                <p className="text-xs text-stone-400 font-light italic">No recent orders found. Time to start a new story?</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6">
+                {orders.map(order => (
+                  <div 
+                    key={order.id}
+                    onClick={() => navigate('/orders')}
+                    className="group flex flex-col md:flex-row md:items-center justify-between p-8 border border-stone-100 rounded-[2rem] hover:border-stone-900 transition-all cursor-pointer bg-white"
+                  >
+                    <div className="flex items-center space-x-6">
+                      <div className="w-12 h-12 bg-stone-50 rounded-full flex items-center justify-center text-stone-400 group-hover:bg-stone-900 group-hover:text-white transition-all">
+                        <Package size={20} />
+                      </div>
+                      <div>
+                        <div className="flex items-center space-x-3 mb-1">
+                          <span className="text-[10px] font-bold text-stone-900 uppercase tracking-widest">Order #{order.id.slice(0, 8)}</span>
+                          <span className={`text-[8px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full ${
+                             order.status === 'delivered' ? 'bg-emerald-50 text-emerald-800' : 
+                             order.status === 'cancelled' ? 'bg-red-50 text-red-800' : 
+                             'bg-amber-50 text-amber-800'
+                          }`}>
+                            {order.status}
+                          </span>
+                        </div>
+                        <p className="text-xs font-light text-stone-400">
+                          {new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-4 md:mt-0 flex items-center justify-between md:justify-end md:space-x-12">
+                      <div className="text-right">
+                        <p className="text-[9px] uppercase tracking-widest font-bold text-stone-400">Total</p>
+                        <p className="text-lg font-serif italic text-stone-900">₹{order.total.toLocaleString()}</p>
+                      </div>
+                      <ArrowRight size={16} className="text-stone-300 group-hover:text-stone-900 group-hover:translate-x-1 transition-all" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

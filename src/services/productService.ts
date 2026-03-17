@@ -1,5 +1,6 @@
 import wooCommerceService from './wooCommerceService';
 import { Product } from '../types';
+import { normalizeCategory } from '../utils/formatUtils';
 
 const mapWooProductToInternal = (wooProduct: any): Product => {
     return {
@@ -16,21 +17,37 @@ const mapWooProductToInternal = (wooProduct: any): Product => {
         stock: wooProduct.stock_quantity || 0,
         featured: wooProduct.featured,
         rating: parseFloat(wooProduct.average_rating) || 0,
-        reviewCount: wooProduct.review_count || 0,
+        reviewCount: wooProduct.rating_count || wooProduct.review_count || (parseFloat(wooProduct.average_rating) > 0 ? 1 : 0),
+        totalSales: parseInt(wooProduct.total_sales) || 0,
     };
 };
+
+const productCache: { [key: string]: { data: any, timestamp: number } } = {};
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export const productService = {
     // Get all products
     async getAllProducts(): Promise<Product[]> {
+        const cacheKey = 'all_products';
+        if (productCache[cacheKey] && (Date.now() - productCache[cacheKey].timestamp < CACHE_TTL)) {
+            return productCache[cacheKey].data;
+        }
+
         const response = await wooCommerceService.get('/products', {
             params: {
                 orderby: 'date',
                 order: 'desc',
-                per_page: 100 // Fetch a good chunk
+                per_page: 50 // Fetch a good chunk
             }
         });
-        return (response.data as any[]).map(mapWooProductToInternal);
+        const mapped = (response.data as any[]).map(mapWooProductToInternal);
+        
+        productCache[cacheKey] = {
+            data: mapped,
+            timestamp: Date.now()
+        };
+        
+        return mapped;
     },
 
     // Get featured products

@@ -7,8 +7,8 @@ const CONSUMER_KEY = import.meta.env.VITE_WC_CONSUMER_KEY;
 // @ts-ignore
 const CONSUMER_SECRET = import.meta.env.VITE_WC_CONSUMER_SECRET;
 
-if (!WC_URL || !CONSUMER_KEY || !CONSUMER_SECRET) {
-    console.error('WooCommerce configuration is missing in environment variables.');
+if (!CONSUMER_KEY || !CONSUMER_SECRET) {
+    console.error('WooCommerce API credentials (key/secret) are missing in environment variables.');
 }
 
 const wooCommerceService = axios.create({
@@ -26,5 +26,19 @@ export const wpService = axios.create({
         consumer_secret: CONSUMER_SECRET,
     },
 });
+
+// Add interceptor for JWT token
+const addAuthInterceptor = (instance: any) => {
+    instance.interceptors.request.use((config: any) => {
+        const token = localStorage.getItem('wc_jwt_token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    });
+};
+
+addAuthInterceptor(wooCommerceService);
+addAuthInterceptor(wpService);
 
 export default wooCommerceService;

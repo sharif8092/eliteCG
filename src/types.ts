@@ -19,6 +19,8 @@ export interface Product {
   featured?: boolean;
   rating: number;
   reviewCount: number;
+  totalSales: number;
+  date_created?: string;
 }
 
 export interface CartItem extends Product {
@@ -40,6 +42,7 @@ export interface Offer {
   clicks: number;
   expiry: string;
   image?: string;
+  link?: string;
   type: 'banner' | 'popup' | 'deal';
 }
 
@@ -80,6 +83,7 @@ export interface UserProfile {
   address?: string;
   phone?: string;
   role: 'customer' | 'admin';
+  wcCustomerId?: number;
 }
 
 export interface Order {
@@ -130,4 +134,15 @@ export interface ShippingMethod {
       value: string;
     }
   };
+}
+
+export interface Review {
+  id: string;
+  productId: string;
+  reviewer: string;
+  reviewerEmail: string;
+  review: string;
+  rating: number;
+  dateCreated: string;
+  verified: boolean;
 }

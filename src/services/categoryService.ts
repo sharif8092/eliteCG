@@ -1,4 +1,5 @@
 import wooCommerceService from './wooCommerceService';
+import { normalizeCategory } from '../utils/formatUtils';
 
 export interface Category {
     id: number;

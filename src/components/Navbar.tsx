@@ -4,34 +4,51 @@ import { ShoppingCart, User, Menu, X, Search, LogOut, ShoppingBag, Heart, ArrowR
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
-import { auth } from '../firebase';
-import { signOut } from 'firebase/auth';
 import { motion, AnimatePresence } from 'motion/react';
 import { MOCK_PRODUCTS } from '../constants';
+import { productService } from '../services/productService';
 import { Product } from '../types';
+import { useQuotation } from '../hooks/useQuotation';
+import QuotationForm from '../components/QuotationForm';
 
 const Navbar: React.FC = () => {
-  const { itemCount } = useCart();
+  const { itemCount, items } = useCart();
   const { wishlist } = useWishlist();
-  const { user, isAdmin } = useAuth();
+  const { user, profile, isAdmin, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const { getQuotationLink, isMobile } = useQuotation();
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const allProducts = await productService.getAllProducts();
+        setProducts(allProducts);
+      } catch (error) {
+        console.error('Error fetching products for suggestions:', error);
+      }
+    };
+    fetchProducts();
+  }, []);
 
   useEffect(() => {
     if (searchQuery.trim().length > 1) {
-      const filtered = MOCK_PRODUCTS.filter(p =>
+      const filtered = products.filter(p =>
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.description.toLowerCase().includes(searchQuery.toLowerCase())
+        p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.categories.some(cat => cat.toLowerCase().includes(searchQuery.toLowerCase()))
       ).slice(0, 5);
       setSuggestions(filtered);
     } else {
       setSuggestions([]);
     }
-  }, [searchQuery]);
+  }, [searchQuery, products]);
 
   useEffect(() => {
     if (isSearchOpen && searchInputRef.current) {
@@ -40,7 +57,7 @@ const Navbar: React.FC = () => {
   }, [isSearchOpen]);
 
   const handleLogout = async () => {
-    await signOut(auth);
+    await logout();
     navigate('/');
   };
 
@@ -58,8 +75,8 @@ const Navbar: React.FC = () => {
       <nav className="sticky top-0 z-50">
         {/* Main Header: Logo | Nav Links | Icons */}
         <div className="bg-white border-b border-stone-200/60">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16 lg:h-[72px]">
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12">
+            <div className="flex items-center justify-between h-16 lg:h-[80px] gap-4">
 
               {/* Left: Logo */}
               <div className="flex-1 flex items-center">
@@ -68,63 +85,140 @@ const Navbar: React.FC = () => {
                 </Link>
               </div>
 
-              {/* Center: Nav Links — Desktop */}
-              <div className="hidden lg:flex items-center justify-center gap-1">
-                {[
-                  { label: 'The Shop', to: '/products' },
-                  { label: 'Abayas & Hijabs', to: '/products?category=Abaya' },
-                  { label: 'Kurtas', to: '/products?category=Kurta' },
-                  { label: 'Fragrances', to: '/products?category=Itter' },
-                  { label: 'Prayer Essentials', to: '/products?category=Janamaz' },
-                  { label: 'Tasbih & Gifts', to: '/products?category=Tasbih' },
-                ].map(item => (
-                  <Link
-                    key={item.label}
-                    to={item.to}
-                    className="relative px-3 py-2 text-[11px] uppercase tracking-[0.12em] font-semibold text-stone-500 hover:text-stone-900 transition-colors duration-200 whitespace-nowrap group"
-                  >
-                    {item.label}
-                    <span className="absolute bottom-0 left-3 right-3 h-[1.5px] bg-emerald-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                <div className="hidden lg:flex items-center justify-center gap-0.5 xl:gap-1 flex-grow">
+                  {/* All Gifts Dropdown */}
+                  <div className="group relative">
+                    <button className="relative px-2 xl:px-3 py-2 text-[10px] xl:text-[11px] uppercase tracking-[0.1em] font-semibold text-stone-500 hover:text-stone-900 transition-colors duration-200 whitespace-nowrap flex items-center gap-1">
+                      All Gifts
+                      <ArrowRight size={10} className="rotate-90 opacity-40" />
+                      <span className="absolute bottom-0 left-2 right-2 h-[1.5px] bg-emerald-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                    </button>
+                    <div className="absolute top-full left-0 w-64 bg-white border border-stone-100 shadow-2xl rounded-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-[60]">
+                      <div className="space-y-1">
+                        {[
+                          { label: 'All Products', to: '/products' },
+                          { label: 'Tech Gifts', to: '/products?category=Tech' },
+                          { label: 'Bags', to: '/products?category=Bags' },
+                          { label: 'Drinkware', to: '/products?category=Drinkware' },
+                          { label: 'Office Supplies', to: '/products?category=Office' },
+                          { label: 'Gift Hampers', to: '/products?category=Hampers' },
+                          { label: 'Eco Friendly Gifts', to: '/products?category=Eco' },
+                        ].map(sub => (
+                          <Link key={sub.label} to={sub.to} className="block px-4 py-2 text-[10px] uppercase tracking-widest font-bold text-stone-500 hover:text-emerald-800 hover:bg-emerald-50 rounded-xl transition-all">
+                            {sub.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Corporate Gifting Dropdown */}
+                  <div className="group relative">
+                    <button className="relative px-2 xl:px-3 py-2 text-[10px] xl:text-[11px] uppercase tracking-[0.1em] font-semibold text-stone-500 hover:text-stone-900 transition-colors duration-200 whitespace-nowrap flex items-center gap-1">
+                      Corporate
+                      <ArrowRight size={10} className="rotate-90 opacity-40" />
+                      <span className="absolute bottom-0 left-2 right-2 h-[1.5px] bg-emerald-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                    </button>
+                    <div className="absolute top-full left-0 w-64 bg-white border border-stone-100 shadow-2xl rounded-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-[60]">
+                      <div className="space-y-1">
+                        {[
+                          { label: 'Overview', to: '/#corporate-services' },
+                          { label: 'Bags', to: '/products?category=Bags' },
+                          { label: 'Tech', to: '/products?category=Tech' },
+                          { label: 'Drinkware', to: '/products?category=Drinkware' },
+                          { label: 'Apparel', to: '/products?category=Apparel' },
+                          { label: 'Office Gifts', to: '/products?category=Office' },
+                        ].map(sub => (
+                          <Link key={sub.label} to={sub.to} className="block px-4 py-2 text-[10px] uppercase tracking-widest font-bold text-stone-500 hover:text-emerald-800 hover:bg-emerald-50 rounded-xl transition-all">
+                            {sub.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <Link to="/products?category=Events" className="relative px-2 xl:px-3 py-2 text-[10px] xl:text-[11px] uppercase tracking-[0.1em] font-semibold text-stone-500 hover:text-stone-900 transition-colors duration-200 whitespace-nowrap group flex flex-col items-center">
+                    Events
+                    <span className="absolute bottom-0 left-2 right-2 h-[1.5px] bg-emerald-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
                   </Link>
-                ))}
-                <Link
-                  to="/products?filter=new-arrivals"
-                  className="px-3 py-1.5 ml-2 text-[11px] uppercase tracking-[0.12em] font-bold text-emerald-700 hover:text-emerald-900 transition-colors duration-200 whitespace-nowrap border border-emerald-100 rounded-full bg-emerald-50/50"
-                >
-                  New Arrivals
-                </Link>
-              </div>
+
+                  <Link to="/bulk-orders" className="relative px-2 xl:px-3 py-2 text-[10px] xl:text-[11px] uppercase tracking-[0.1em] font-semibold text-stone-500 hover:text-stone-900 transition-colors duration-200 whitespace-nowrap group flex flex-col items-center">
+                    Bulk
+                    <span className="absolute bottom-0 left-2 right-2 h-[1.5px] bg-emerald-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                  </Link>
+
+                  <Link to="/custom-branding" className="relative px-2 xl:px-3 py-2 text-[10px] xl:text-[11px] uppercase tracking-[0.1em] font-semibold text-stone-500 hover:text-stone-900 transition-colors duration-200 whitespace-nowrap group flex flex-col items-center">
+                    Branding
+                    <span className="absolute bottom-0 left-2 right-2 h-[1.5px] bg-emerald-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                  </Link>
+
+                  {/* Industry Solutions Dropdown */}
+                  <div className="group relative">
+                    <button className="relative px-2 xl:px-3 py-2 text-[10px] xl:text-[11px] uppercase tracking-[0.1em] font-semibold text-stone-500 hover:text-stone-900 transition-colors duration-200 whitespace-nowrap flex items-center gap-1">
+                      Solutions
+                      <ArrowRight size={10} className="rotate-90 opacity-40" />
+                      <span className="absolute bottom-0 left-2 right-2 h-[1.5px] bg-emerald-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                    </button>
+                    <div className="absolute top-full left-0 w-72 bg-white border border-stone-100 shadow-2xl rounded-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-[60]">
+                      <div className="space-y-1">
+                        {[
+                          { label: 'Employee Welcome Kits', to: '/products?category=Welcome' },
+                          { label: 'Conference Gifts', to: '/products?category=Conference' },
+                          { label: 'Promotional Merchandise', to: '/products?category=Promo' },
+                          { label: 'Festival Gifts', to: '/products?category=Festival' },
+                        ].map(sub => (
+                          <Link key={sub.label} to={sub.to} className="block px-4 py-2 text-[10px] uppercase tracking-widest font-bold text-stone-500 hover:text-emerald-800 hover:bg-emerald-50 rounded-xl transition-all">
+                            {sub.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <Link
+                    to="/new-arrivals"
+                    className="px-2 xl:px-4 py-1.5 ml-1 xl:ml-2 text-[10px] xl:text-[11px] uppercase tracking-[0.1em] font-bold text-emerald-700 hover:text-emerald-900 transition-colors duration-200 whitespace-nowrap border border-emerald-100 rounded-full bg-emerald-50/50"
+                  >
+                    New
+                  </Link>
+                </div>
 
               {/* Right: Icons */}
-              <div className="flex-1 flex items-center justify-end gap-1.5">
+              <div className="flex-1 flex items-center justify-end gap-1 xl:gap-2">
                 {/* Search */}
                 <button
                   onClick={() => setIsSearchOpen(true)}
-                  className="p-2 text-stone-500 hover:text-stone-900 transition-colors duration-200"
+                  className="p-1 px-2 text-stone-500 hover:text-stone-900 transition-colors duration-200"
                   aria-label="Search"
                 >
-                  <Search size={19} strokeWidth={1.5} />
+                  <Search size={18} strokeWidth={1.5} />
                 </button>
 
-                {/* Admin Link */}
-                {isAdmin && (
-                  <Link to="/admin" className="p-2 text-emerald-600 hover:text-emerald-700 transition-colors duration-200">
-                    <ShieldCheck size={19} strokeWidth={2} />
-                  </Link>
-                )}
-
                 {/* Account */}
-                <Link to={user ? "/profile" : "/auth"} className="p-2 text-stone-500 hover:text-stone-900 transition-colors duration-200">
-                  <User size={19} strokeWidth={1.5} />
+                <Link to={profile ? "/profile" : "/auth"} className={`p-1.5 rounded-full transition-all duration-300 ${profile ? 'bg-emerald-50 ring-1 ring-emerald-100 hover:bg-emerald-100' : 'text-stone-500 hover:text-stone-900 group'}`}>
+                  <User size={18} strokeWidth={profile ? 2 : 1.5} className={profile ? 'text-emerald-700' : 'text-stone-500 group-hover:text-stone-900'} />
                 </Link>
 
                 {/* Cart/Bag */}
                 <Link to="/cart" className="p-2 text-stone-500 hover:text-stone-900 transition-colors duration-200 relative">
-                  <ShoppingBag size={19} strokeWidth={1.5} />
+                  <ShoppingBag size={18} strokeWidth={1.5} />
                   {itemCount > 0 && (
                     <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-emerald-600 text-white text-[7px] font-bold rounded-full flex items-center justify-center">{itemCount}</span>
                   )}
                 </Link>
+
+                {/* Request Quote Button */}
+                <button 
+                  onClick={() => setIsFormOpen(true)}
+                  className="hidden lg:flex items-center gap-2 px-4 xl:px-5 py-2.5 bg-emerald-900 text-white rounded-full text-[9px] xl:text-[10px] uppercase tracking-widest font-bold hover:bg-stone-900 transition-all shadow-lg shadow-emerald-900/20"
+                >
+                  <ShoppingBag size={13} />
+                  <span className="whitespace-nowrap">Request Quote</span>
+                </button>
+
+                <a href="tel:+919000000000" className="hidden 2xl:flex items-center gap-2 px-4 py-2.5 text-stone-900 rounded-full text-[9px] xl:text-[10px] uppercase tracking-widest font-bold border border-stone-200 hover:bg-stone-50 transition-all">
+                  <span className="whitespace-nowrap">Talk to Expert</span>
+                </a>
 
                 {/* Mobile Menu Toggle */}
                 <button
@@ -151,29 +245,41 @@ const Navbar: React.FC = () => {
             >
               <div className="px-6 py-4 space-y-0">
                 {[
-                  { label: 'The Shop', to: '/products' },
-                  { label: 'Abayas & Hijabs', to: '/products?category=Abaya' },
-                  { label: 'Kurtas', to: '/products?category=Kurta' },
-                  { label: 'Fragrances & Oudh', to: '/products?category=Itter' },
-                  { label: 'Prayer Essentials', to: '/products?category=Janamaz' },
-                  { label: 'Tasbih & Gifts', to: '/products?category=Tasbih' },
+                  { label: 'All Gifts', to: '/products' },
+                  { label: 'Corporate Gifting', to: '/#corporate-services' },
+                  { label: 'Event Gifting', to: '/products?category=Events' },
+                  { label: 'Bulk Orders', to: '/bulk-orders' },
+                  { label: 'Custom Branding', to: '/custom-branding' },
+                  { label: 'Solutions', to: '/#corporate-services' },
+                  { label: 'New Arrivals', to: '/new-arrivals' },
                 ].map(item => (
                   <Link
                     key={item.label}
                     to={item.to}
                     onClick={() => setIsOpen(false)}
-                    className="block py-3 text-[11px] uppercase tracking-[0.15em] font-semibold text-stone-600 hover:text-emerald-800 border-b border-stone-50 transition-colors"
+                    className={`block py-3 text-[11px] uppercase tracking-[0.15em] font-semibold border-b border-stone-50 transition-colors ${item.label === 'New Arrivals' ? 'text-emerald-700' : 'text-stone-600 hover:text-emerald-800'}`}
                   >
                     {item.label}
                   </Link>
                 ))}
-                <Link
-                  to="/products?filter=new-arrivals"
-                  onClick={() => setIsOpen(false)}
-                  className="block py-3 text-[11px] uppercase tracking-[0.15em] font-bold text-emerald-700"
-                >
-                  New Arrivals
-                </Link>
+                <div className="pt-6 space-y-4">
+                  <button
+                    onClick={() => {
+                      setIsFormOpen(true);
+                      setIsOpen(false);
+                    }}
+                    className="flex items-center justify-center gap-2 w-full py-4 bg-emerald-900 text-white rounded-full text-[10px] uppercase tracking-widest font-bold"
+                  >
+                    <ShoppingBag size={14} />
+                    Request Quote
+                  </button>
+                  <a
+                    href="tel:+919000000000"
+                    className="flex items-center justify-center gap-2 w-full py-4 border border-stone-200 text-stone-900 rounded-full text-[10px] uppercase tracking-widest font-bold"
+                  >
+                    📞 Talk to Gifting Expert
+                  </a>
+                </div>
               </div>
             </motion.div>
           )}
@@ -226,7 +332,7 @@ const Navbar: React.FC = () => {
                     <div className="px-6 pb-5 border-t border-stone-50 pt-4">
                       <p className="text-[9px] uppercase tracking-[0.2em] font-bold text-stone-400 mb-3">Popular Searches</p>
                       <div className="flex flex-wrap gap-2">
-                        {['Abaya', 'Kurta', 'Prayer Mat', 'Attar', 'Tasbih', 'Hijab'].map(tag => (
+                        {['Office Hampers', 'Executive Gifts', 'Tech Kits', 'Logo Printing', 'Bulk Order', 'New Collections'].map(tag => (
                           <button
                             key={tag}
                             type="button"
@@ -277,6 +383,12 @@ const Navbar: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
+      <QuotationForm 
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        items={items}
+        onSuccess={() => {}}
+      />
     </>
   );
 };

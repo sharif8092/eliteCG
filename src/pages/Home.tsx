@@ -1,16 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowRight, Star, ShieldCheck, Truck, Mail, Package, CreditCard, RotateCcw, Quote, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
-import { MOCK_PRODUCTS } from '../constants';
+import { ArrowRight, Star, ShieldCheck, Truck, Mail, Package, CreditCard, RotateCcw, Quote, Sparkles, ChevronLeft, ChevronRight, Calendar, User as UserIcon } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import { productService } from '../services/productService';
 import { offerService } from '../services/offerService';
-import { Product, Offer } from '../types';
+import { blogService } from '../services/blogService';
+import { categoryService, Category } from '../services/categoryService';
+import { Product, Offer, BlogPost } from '../types';
+
+const DEFAULT_HERO_SLIDES = [
+  {
+    image: 'https://images.unsplash.com/photo-1549463591-147604d4c815?q=80&w=1920&auto=format&fit=crop', // Corporate Gift Boxes
+    subtitle: 'Excellence in Corporate Gifting',
+    title: 'Premium Business Gifts',
+    desc: 'Thoughtfully curated luxury gift sets for your valued partners and employees.',
+    link: '/products',
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1513201099705-a9746e1e201f?q=80&w=1920&auto=format&fit=crop', // Wrapped gifts
+    subtitle: 'Custom Branding Available',
+    title: 'Bespoke Curations',
+    desc: 'Personalize every gift with your corporate identity for a lasting impression.',
+    link: '/products',
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1523293836414-f04e712e1f3b?q=80&w=1920&auto=format&fit=crop', // Elegant Desk/Gift
+    subtitle: 'Bulk Orders Simplified',
+    title: 'Seamless Logistics',
+    desc: 'From curation to doorstep delivery, we handle your festive gifting at scale.',
+    link: '/products',
+  },
+];
 
 const Home: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [activeOffer, setActiveOffer] = useState<Offer | null>(null);
+  const [latestPosts, setLatestPosts] = useState<BlogPost[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Hero carousel state
@@ -30,6 +57,14 @@ const Home: React.FC = () => {
         if (bannerOffer) {
           setActiveOffer(bannerOffer);
         }
+
+        // Fetch latest blog posts
+        const recentPosts = await blogService.getRecentPosts(3);
+        setLatestPosts(recentPosts);
+
+        // Fetch categories
+        const allCategories = await categoryService.getAllCategories();
+        setCategories(allCategories);
       } catch (error) {
         console.error('Error fetching home data:', error);
       } finally {
@@ -41,15 +76,30 @@ const Home: React.FC = () => {
 
   // Auto-rotate slides
   useEffect(() => {
+    if (DEFAULT_HERO_SLIDES.length <= 1) return;
     const timer = setInterval(() => {
-      setHeroSlide(prev => (prev === 2 ? 0 : prev + 1));
+      setHeroSlide(prev => (prev === DEFAULT_HERO_SLIDES.length - 1 ? 0 : prev + 1));
     }, 5000);
     return () => clearInterval(timer);
   }, []);
 
-  const featuredProducts = products.filter(p => p.featured);
-  const trendingProducts = products.slice(0, 4);
-  const bestSellers = [...products].sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0)).slice(0, 4);
+  const featuredProducts = useMemo(() => products.filter(p => p.featured), [products]);
+
+  const trendingProducts = useMemo(() =>
+    [...products]
+      .sort((a, b) => {
+        if (a.featured && !b.featured) return -1;
+        if (!a.featured && b.featured) return 1;
+        return b.rating - a.rating;
+      })
+      .slice(0, 4)
+    , [products]);
+
+  const bestSellers = useMemo(() =>
+    [...products]
+      .sort((a, b) => b.totalSales - a.totalSales)
+      .slice(0, 4)
+    , [products]);
 
   // Hero carousel state
 
@@ -60,14 +110,14 @@ const Home: React.FC = () => {
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23fff\' fill-opacity=\'1\'%3E%3Ccircle cx=\'10\' cy=\'10\' r=\'1\'/%3E%3C/g%3E%3C/svg%3E")' }} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 relative z-10">
           <h3 className="text-white font-extrabold text-lg sm:text-2xl md:text-3xl uppercase tracking-wide" style={{ fontStyle: 'italic' }}>
-            {activeOffer ? activeOffer.title : 'Free Prayer Mat'}
+            {activeOffer ? activeOffer.title : 'Corporate Bulk Discounts'}
           </h3>
           <div className="flex items-center gap-3 sm:gap-5">
             <span className="bg-amber-400 text-emerald-900 text-[8px] sm:text-[9px] uppercase tracking-widest font-extrabold px-3 py-1 rounded-full">
-              {activeOffer ? 'Limited Offer' : 'Limited Time Offer'}
+              {activeOffer ? 'Limited Offer' : 'Exclusive B2B Pricing'}
             </span>
             <h3 className="text-white font-extrabold text-lg sm:text-2xl md:text-3xl uppercase tracking-wide" style={{ fontStyle: 'italic' }}>
-              {activeOffer ? activeOffer.description : 'On Orders Above ₹2999'}
+              {activeOffer ? activeOffer.description : 'On Orders Above 25 Units'}
             </h3>
           </div>
         </div>
@@ -76,97 +126,81 @@ const Home: React.FC = () => {
       {/* ═══ HERO IMAGE CAROUSEL ═══ */}
       <section className="relative w-full h-[60vh] sm:h-[70vh] md:h-[85vh] overflow-hidden bg-stone-900">
         {/* Slides */}
-        {[
-          {
-            image: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?q=80&w=1964&auto=format&fit=crop',
-            subtitle: 'The Ramadan Collection 2026',
-            title: 'Premium Abayas',
-            desc: 'Elegant designs for every occasion',
-            link: '/products?category=Abaya',
-          },
-          {
-            image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=1920&auto=format&fit=crop',
-            subtitle: 'Artisanal Fragrances',
-            title: 'Oudh & Itter Collection',
-            desc: 'Long-lasting traditional Arabian scents',
-            link: '/products?category=Itter',
-          },
-          {
-            image: 'https://images.unsplash.com/photo-1597075687490-8f673c6c17f6?q=80&w=1920&auto=format&fit=crop',
-            subtitle: 'Handcrafted with Love',
-            title: 'Prayer Essentials',
-            desc: 'Premium janamaz, tasbih & more',
-            link: '/products?category=Janamaz',
-          },
-        ].map((slide, i) => (
+        {DEFAULT_HERO_SLIDES.map((slide, i) => (
           <motion.div
             key={i}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: heroSlide === i ? 1 : 0 }}
-            transition={{ duration: 0.8 }}
-            className="absolute inset-0"
-            style={{ pointerEvents: heroSlide === i ? 'auto' : 'none' }}
-          >
-            <img
-              src={slide.image}
-              alt={slide.title}
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+              initial={{ opacity: 0 }}
+              animate={{ opacity: heroSlide === i ? 1 : 0 }}
+              transition={{ duration: 0.8 }}
+              className="absolute inset-0"
+              style={{ pointerEvents: heroSlide === i ? 'auto' : 'none' }}
+            >
+              <img
+                src={slide.image}
+                alt={slide.title}
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
-            {/* Bottom-left text overlay */}
-            <div className="absolute bottom-10 sm:bottom-16 md:bottom-20 left-4 sm:left-8 md:left-16 max-w-lg z-10">
-              <motion.div
-                key={`text-${heroSlide}`}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.6 }}
-              >
-                <span className="text-emerald-300 text-[9px] sm:text-[10px] uppercase tracking-[0.4em] font-bold mb-2 block">
-                  {slide.subtitle}
-                </span>
-                <h1 className="text-3xl sm:text-5xl md:text-7xl font-extrabold text-white uppercase leading-[0.95] tracking-tight mb-2">
-                  {slide.title}
-                </h1>
-                <p className="text-white/60 text-sm sm:text-base font-light mb-6">
-                  {slide.desc}
-                </p>
-                <Link
-                  to={slide.link}
-                  className="inline-block bg-white text-stone-900 px-6 sm:px-8 py-3 sm:py-3.5 rounded-lg font-extrabold text-[10px] sm:text-xs uppercase tracking-widest hover:bg-emerald-50 transition-all shadow-lg"
+              {/* Bottom-left text overlay */}
+              <div className="absolute bottom-10 sm:bottom-16 md:bottom-20 left-4 sm:left-8 md:left-16 max-w-lg z-10">
+                <motion.div
+                  key={`text-${heroSlide}`}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2, duration: 0.6 }}
                 >
-                  Shop Now
-                </Link>
-              </motion.div>
-            </div>
-          </motion.div>
-        ))}
-
+                  <span className="text-emerald-300 text-[9px] sm:text-[10px] uppercase tracking-[0.4em] font-bold mb-2 block">
+                    {slide.subtitle}
+                  </span>
+                  <h1 className="text-3xl sm:text-5xl md:text-7xl font-extrabold text-white uppercase leading-[0.95] tracking-tight mb-2">
+                    {slide.title}
+                  </h1>
+                  <p className="text-white/60 text-sm sm:text-base font-light mb-6">
+                    {slide.desc}
+                  </p>
+                  <Link
+                    to={slide.link}
+                    className="inline-block bg-white text-stone-900 px-6 sm:px-8 py-3 sm:py-3.5 rounded-lg font-extrabold text-[10px] sm:text-xs uppercase tracking-widest hover:bg-emerald-50 transition-all shadow-lg"
+                  >
+                    Shop Now
+                  </Link>
+                </motion.div>
+              </div>
+            </motion.div>
+          ))}
+        
         {/* Navigation Arrows */}
-        <button
-          onClick={() => setHeroSlide(prev => (prev === 0 ? 2 : prev - 1))}
-          className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/10 hover:bg-white/25 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all z-20"
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <button
-          onClick={() => setHeroSlide(prev => (prev === 2 ? 0 : prev + 1))}
-          className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/10 hover:bg-white/25 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all z-20"
-        >
-          <ChevronRight size={20} />
-        </button>
+        {DEFAULT_HERO_SLIDES.length > 1 && (
+          <>
+            <button
+              onClick={() => setHeroSlide(prev => (prev === 0 ? DEFAULT_HERO_SLIDES.length - 1 : prev - 1))}
+              className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/10 hover:bg-white/25 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all z-20"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              onClick={() => setHeroSlide(prev => (prev === DEFAULT_HERO_SLIDES.length - 1 ? 0 : prev + 1))}
+              className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/10 hover:bg-white/25 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all z-20"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </>
+        )}
 
         {/* Slide Indicators */}
-        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-          {[0, 1, 2].map(i => (
-            <button
-              key={i}
-              onClick={() => setHeroSlide(i)}
-              className={`h-1.5 rounded-full transition-all duration-300 ${heroSlide === i ? 'w-8 bg-white' : 'w-1.5 bg-white/40 hover:bg-white/60'}`}
-            />
-          ))}
-        </div>
+        {DEFAULT_HERO_SLIDES.length > 1 && (
+          <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+            {DEFAULT_HERO_SLIDES.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setHeroSlide(i)}
+                className={`h-1.5 rounded-full transition-all duration-300 ${heroSlide === i ? 'w-8 bg-white' : 'w-1.5 bg-white/40 hover:bg-white/60'}`}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* ═══ TRUST / USP STRIP ═══ */}
@@ -174,10 +208,10 @@ const Home: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-stone-200">
             {[
-              { icon: Truck, title: 'Free Shipping', desc: 'On orders above ₹999' },
-              { icon: ShieldCheck, title: '100% Authentic', desc: 'Verified products only' },
-              { icon: CreditCard, title: 'Secure Payment', desc: 'SSL encrypted checkout' },
-              { icon: RotateCcw, title: 'Easy Returns', desc: '7-day return policy' },
+              { icon: Truck, title: 'Bulk Logistics', desc: 'Pan-India doorstep delivery' },
+              { icon: Package, title: 'Custom Branding', desc: 'Logo & message integration' },
+              { icon: ShieldCheck, title: 'Premium Quality', desc: 'Quality checked assurance' },
+              { icon: CreditCard, title: 'Tax Benefits', desc: 'GST invoicing & compliance' },
             ].map((item) => (
               <motion.div
                 key={item.title}
@@ -211,16 +245,25 @@ const Home: React.FC = () => {
 
         {/* Category Pills */}
         <div className="flex flex-wrap gap-2 sm:gap-3 mb-10">
-          {['All', 'Abaya', 'Kurta', 'Itter', 'Tasbih', 'Cap', 'Janamaz', 'Home Decor', 'Miswaq'].map((cat) => (
+          <button
+            onClick={() => setSelectedCategory('All')}
+            className={`px-5 py-2.5 rounded-md text-[11px] sm:text-xs font-bold uppercase tracking-wider border transition-all duration-200 ${selectedCategory === 'All'
+              ? 'bg-stone-900 text-white border-stone-900'
+              : 'bg-white text-stone-700 border-stone-300 hover:border-stone-900 hover:text-stone-900'
+              }`}
+          >
+            All
+          </button>
+          {categories.map((cat) => (
             <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-5 py-2.5 rounded-md text-[11px] sm:text-xs font-bold uppercase tracking-wider border transition-all duration-200 ${selectedCategory === cat
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.name)}
+              className={`px-5 py-2.5 rounded-md text-[11px] sm:text-xs font-bold uppercase tracking-wider border transition-all duration-200 ${selectedCategory === cat.name
                 ? 'bg-stone-900 text-white border-stone-900'
                 : 'bg-white text-stone-700 border-stone-300 hover:border-stone-900 hover:text-stone-900'
                 }`}
             >
-              {cat}
+              {cat.name}
             </button>
           ))}
         </div>
@@ -240,18 +283,71 @@ const Home: React.FC = () => {
         </div>
 
         {/* If fewer than expected products */}
-        {products.filter(p => selectedCategory === 'All' || p.category === selectedCategory).length === 0 && (
+        {products.filter(p => selectedCategory === 'All' || p.categories.some(cat => cat.toLowerCase() === selectedCategory.toLowerCase())).length === 0 && (
           <div className="text-center py-16">
             <p className="text-stone-400 font-light italic">No products found in this category yet.</p>
           </div>
         )}
       </section>
 
-      {/* ═══ RAMADAN SPECIAL BANNER ═══ */}
+      {/* ═══ CORPORATE & CUSTOMIZATION SERVICES ═══ */}
+      <section id="corporate-services" className="bg-stone-900 py-24 md:py-32 overflow-hidden relative">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-30" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <span className="text-emerald-400 text-[10px] uppercase tracking-[0.5em] font-bold mb-4 block">B2B Solutions</span>
+              <h2 className="text-4xl md:text-6xl font-serif text-white mb-8 leading-tight">
+                Corporate <span className="italic text-emerald-400">Gifting</span> Redefined
+              </h2>
+              <div className="space-y-6">
+                {[
+                  { title: 'Custom Branding', desc: 'Logo printing, precision engraving, or metal branding options for every item.' },
+                  { title: 'Bulk Logistics', desc: 'Direct shipping to multiple addresses across the country with real-time tracking.' },
+                  { title: 'Bespoke Packaging', desc: 'Choose from our existing premium sets or work with us for unique, company-branded wraps.' },
+                  { title: 'Tax Benefits', desc: 'Full GST invoicing for all corporate orders to help with your business accounting.' },
+                ].map((service, i) => (
+                  <div key={i} className="flex gap-4">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 flex-shrink-0" />
+                    <div>
+                      <h4 className="text-white font-bold text-sm uppercase tracking-wider mb-1">{service.title}</h4>
+                      <p className="text-stone-400 text-sm font-light">{service.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="relative aspect-square lg:aspect-[4/5] rounded-[2rem] overflow-hidden"
+            >
+              <img 
+                src="https://images.unsplash.com/photo-1523293836414-f04e712e1f3b?q=80&w=1920&auto=format&fit=crop" 
+                alt="Corporate Gifting" 
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-stone-900/80 to-transparent" />
+              <div className="absolute bottom-10 left-10 right-10 p-8 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10">
+                <p className="text-white italic font-light mb-4">"The quality and presentation of the gift sets exceeded our expectations. Our partners were truly impressed."</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-white">HR</div>
+                  <p className="text-white text-xs font-bold uppercase tracking-widest">Global Tech Solutions</p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ RAMADAN SPECIAL BANNER (Updated for Corporate Focus) ═══ */}
       <section className="relative overflow-hidden">
-        <div className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 py-16 md:py-20">
-          {/* Decorative pattern */}
-          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }} />
+        <div className="bg-white py-16 md:py-20 border-y border-stone-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="flex flex-col md:flex-row items-center justify-between gap-8">
               <motion.div
@@ -260,12 +356,12 @@ const Home: React.FC = () => {
                 viewport={{ once: true }}
                 className="text-center md:text-left"
               >
-                <span className="text-emerald-300/80 text-[10px] uppercase tracking-[0.4em] font-bold mb-3 block">Limited Time</span>
-                <h2 className="text-3xl md:text-5xl font-serif text-white mb-3">
-                  Ramadan <span className="italic text-emerald-300">Special</span>
+                <span className="text-stone-400 text-[10px] uppercase tracking-[0.4em] font-bold mb-3 block">Volume Orders</span>
+                <h2 className="text-3xl md:text-5xl font-serif text-stone-900 mb-3">
+                  Bulk <span className="italic text-emerald-800">Inquiry</span>
                 </h2>
-                <p className="text-emerald-100/60 font-light max-w-md">
-                  Up to 30% off on selected items. Celebrate the holy month with our exclusive collection.
+                <p className="text-stone-500 font-light max-w-md">
+                  Planning for a large event or festive season? Get a custom quote for bulk requirements.
                 </p>
               </motion.div>
               <motion.div
@@ -273,13 +369,13 @@ const Home: React.FC = () => {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
               >
-                <Link
-                  to="/products"
-                  className="group inline-flex items-center gap-3 bg-white text-emerald-900 px-10 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-emerald-50 transition-all duration-300 shadow-xl hover:-translate-y-0.5"
+                <a
+                  href="#inquiry"
+                  className="group inline-flex items-center gap-3 bg-stone-900 text-white px-10 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-emerald-900 transition-all duration-300 shadow-xl hover:-translate-y-0.5"
                 >
-                  <span>Shop the Sale</span>
+                  <span>Request Quote</span>
                   <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                </Link>
+                </a>
               </motion.div>
             </div>
           </div>
@@ -305,7 +401,7 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* ═══ EDITORIAL STORY ═══ */}
+      {/* ═══ EDITORIAL STORY (DYNAMIC) ═══ */}
       <section className="bg-[#1A1A1A] text-white py-24 md:py-32 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
@@ -317,8 +413,8 @@ const Home: React.FC = () => {
                 className="aspect-[4/5] rounded-[3rem] overflow-hidden"
               >
                 <img
-                  src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1920&auto=format&fit=crop"
-                  alt="Editorial Story"
+                  src={latestPosts[0]?.image || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1920&auto=format&fit=crop"}
+                  alt={latestPosts[0]?.imageAlt || "Editorial Story"}
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />
@@ -329,23 +425,36 @@ const Home: React.FC = () => {
             <div className="space-y-10">
               <span className="text-emerald-400 text-[10px] uppercase tracking-[0.5em] font-bold block">Our Philosophy</span>
               <h2 className="text-5xl md:text-7xl font-serif leading-[1.1] tracking-tight">
-                Crafting <br />
-                <span className="italic text-emerald-400">Timeless</span> <br />
-                Narratives.
+                {latestPosts[0] ? (
+                  latestPosts[0].title.split(' ').map((word, i) => (
+                    <React.Fragment key={i}>
+                      {i === 1 ? <span className="italic text-emerald-400">{word} </span> : word + ' '}
+                      {i === 1 && <br />}
+                    </React.Fragment>
+                  ))
+                ) : (
+                  <>
+                    Crafting <br />
+                    <span className="italic text-emerald-400">Timeless</span> <br />
+                    Narratives.
+                  </>
+                )}
               </h2>
-              <p className="text-stone-400 text-lg leading-relaxed font-light max-w-md">
-                Ababil is more than a store. It is a sanctuary for those who seek beauty in the sacred, and meaning in the mundane. Every piece is selected for its soul.
-              </p>
+              <div
+                className="text-stone-400 text-lg leading-relaxed font-light max-w-md line-clamp-4"
+                dangerouslySetInnerHTML={{ __html: latestPosts[0]?.content || "Ababil is more than a store. It is a sanctuary for those who seek beauty in the sacred, and meaning in the mundane. Every piece is selected for its soul." }}
+              />
               <div className="pt-6">
-                <Link to="/about" className="group flex items-center space-x-4 text-white">
+                <Link to={`/blog/${latestPosts[0]?.id}`} className="group flex items-center space-x-4 text-white hover:text-emerald-400 transition-colors">
                   <span className="text-xs uppercase tracking-widest font-bold">Read Our Story</span>
-                  <div className="w-12 h-[1px] bg-white/30 group-hover:w-20 transition-all duration-500" />
+                  <div className="w-12 h-[1px] bg-white/30 group-hover:w-20 group-hover:bg-emerald-400 transition-all duration-500" />
                 </Link>
               </div>
             </div>
           </div>
         </div>
       </section>
+
 
       {/* ═══ BESTSELLERS ═══ */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
@@ -432,61 +541,106 @@ const Home: React.FC = () => {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
         <div className="text-center mb-20">
           <h2 className="text-4xl md:text-6xl font-serif text-stone-900 mb-6">Shop by <span className="italic">Collection</span></h2>
-          <p className="text-stone-500 max-w-lg mx-auto font-light">Explore our thoughtfully assembled edits, designed for every moment of your spiritual journey.</p>
+          <p className="text-stone-500 max-w-lg mx-auto font-light">Explore our thoughtfully assembled edits, designed for every professional milestone and corporate celebration.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-          <Link to="/products?category=Abaya" className="group relative aspect-[16/10] overflow-hidden rounded-[2rem] md:rounded-[3rem]">
+          <Link to="/products?category=Office" className="group relative aspect-[16/10] overflow-hidden rounded-[2rem] md:rounded-[3rem]">
             <img
-              src="https://images.unsplash.com/photo-1564466809058-bf4114d55352?q=80&w=1920&auto=format&fit=crop"
-              alt="Abayas"
+              src="https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?q=80&w=1920&auto=format&fit=crop"
+              alt="Executive Gifts"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
               referrerPolicy="no-referrer"
             />
             <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
             <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-8">
-              <h3 className="text-4xl md:text-5xl font-serif text-white mb-4">The Abaya Edit</h3>
+              <h3 className="text-4xl md:text-5xl font-serif text-white mb-4">The Executive Edit</h3>
               <span className="text-white/80 text-[10px] uppercase tracking-[0.3em] font-bold border-b border-white/40 pb-1">Shop Now</span>
             </div>
           </Link>
 
-          <Link to="/products?category=Itter" className="group relative aspect-[16/10] overflow-hidden rounded-[2rem] md:rounded-[3rem]">
+          <Link to="/products?category=Hampers" className="group relative aspect-[16/10] overflow-hidden rounded-[2rem] md:rounded-[3rem]">
             <img
-              src="https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=1920&auto=format&fit=crop"
-              alt="Itter"
+              src="https://images.unsplash.com/photo-1549463591-147604d4c815?q=80&w=1920&auto=format&fit=crop"
+              alt="Premium Hampers"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
               referrerPolicy="no-referrer"
             />
             <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
             <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-8">
-              <h3 className="text-4xl md:text-5xl font-serif text-white mb-4">Artisanal Itter</h3>
+              <h3 className="text-4xl md:text-5xl font-serif text-white mb-4">Premium Hampers</h3>
               <span className="text-white/80 text-[10px] uppercase tracking-[0.3em] font-bold border-b border-white/40 pb-1">Shop Now</span>
             </div>
           </Link>
         </div>
       </section>
 
-      {/* ═══ NEWSLETTER ═══ */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
-        <div className="text-center space-y-12">
-          <div className="w-16 h-16 bg-emerald-800 rounded-full flex items-center justify-center mx-auto mb-8">
-            <Mail className="text-white" size={24} />
+      {/* ═══ BULK INQUIRY FORM ═══ */}
+      <section id="inquiry" className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
+        <div className="bg-stone-50 rounded-[3rem] p-8 md:p-16 border border-stone-100 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-teal-500/5 rounded-full -ml-16 -mb-16 blur-3xl" />
+          
+          <div className="max-w-2xl mx-auto text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-serif text-stone-900 mb-4">Request a <span className="italic">Quote</span></h2>
+            <p className="text-stone-500 font-light">Fill out the form below and our corporate gifting experts will get back to you within 24 hours.</p>
           </div>
-          <h2 className="text-4xl md:text-6xl font-serif text-stone-900 leading-tight">
-            Stay <span className="italic">Connected</span>
-          </h2>
-          <p className="text-stone-500 text-lg max-w-md mx-auto font-light">
-            Join our inner circle for exclusive previews, artisanal stories, and quiet moments of inspiration.
-          </p>
-          <form className="max-w-md mx-auto">
-            <div className="flex flex-col sm:flex-row gap-4">
+
+          <form className="grid grid-cols-1 md:grid-cols-2 gap-6" onSubmit={(e) => { e.preventDefault(); alert('Trial Inquiry Sent! We will contact you soon.'); }}>
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase tracking-widest font-bold text-stone-400 ml-1">Full Name</label>
               <input
-                type="email"
-                placeholder="Email Address"
-                className="flex-grow bg-transparent border-b border-stone-200 px-4 py-4 text-stone-900 placeholder:text-stone-300 focus:outline-none focus:border-stone-900 transition-all"
+                required
+                type="text"
+                placeholder="Ex: John Doe"
+                className="w-full bg-white border border-stone-200 rounded-xl px-5 py-4 text-stone-900 placeholder:text-stone-300 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all font-light"
               />
-              <button className="text-stone-900 font-bold text-xs uppercase tracking-widest hover:text-emerald-800 transition-colors">
-                Subscribe
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase tracking-widest font-bold text-stone-400 ml-1">Company Name</label>
+              <input
+                required
+                type="text"
+                placeholder="Ex: Global Tech Inc."
+                className="w-full bg-white border border-stone-200 rounded-xl px-5 py-4 text-stone-900 placeholder:text-stone-300 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all font-light"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase tracking-widest font-bold text-stone-400 ml-1">Work Email</label>
+              <input
+                required
+                type="email"
+                placeholder="john@company.com"
+                className="w-full bg-white border border-stone-200 rounded-xl px-5 py-4 text-stone-900 placeholder:text-stone-300 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all font-light"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase tracking-widest font-bold text-stone-400 ml-1">Expected Quantity</label>
+              <select
+                required
+                className="w-full bg-white border border-stone-200 rounded-xl px-5 py-4 text-stone-900 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all font-light appearance-none"
+              >
+                <option value="">Select Range</option>
+                <option value="25-50">25 - 50 Units</option>
+                <option value="50-100">50 - 100 Units</option>
+                <option value="100-500">100 - 500 Units</option>
+                <option value="500+">500+ Units</option>
+              </select>
+            </div>
+            <div className="md:col-span-2 space-y-1.5">
+              <label className="text-[10px] uppercase tracking-widest font-bold text-stone-400 ml-1">Additional Requirements</label>
+              <textarea
+                rows={4}
+                placeholder="Tell us about the occasion, branding needs, or specific products you are interested in..."
+                className="w-full bg-white border border-stone-200 rounded-xl px-5 py-4 text-stone-900 placeholder:text-stone-300 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all font-light resize-none"
+              />
+            </div>
+            <div className="md:col-span-2 pt-4">
+              <button
+                type="submit"
+                className="w-full bg-emerald-800 text-white rounded-xl py-5 font-bold text-xs uppercase tracking-[0.2em] hover:bg-emerald-900 transition-all duration-300 shadow-xl shadow-emerald-900/10 hover:shadow-emerald-900/20 active:scale-[0.98]"
+              >
+                Submit Inquiry
               </button>
             </div>
           </form>

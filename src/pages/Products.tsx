@@ -23,6 +23,7 @@ const Products: React.FC = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>(categoryFilter ? [categoryFilter] : []);
   const [sortBy, setSortBy] = useState<'price-low' | 'price-high' | 'newest' | 'name-az' | 'name-za'>('newest');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
+  const [minRating, setMinRating] = useState<number>(0);
   const [onlyInStock, setOnlyInStock] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
@@ -42,7 +43,7 @@ const Products: React.FC = () => {
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
-        setTimeout(() => setLoading(false), 500); // Small delay for smooth transition
+        setLoading(false);
       }
     };
     fetchData();
@@ -52,6 +53,8 @@ const Products: React.FC = () => {
   useEffect(() => {
     if (categoryFilter) {
       setSelectedCategories([categoryFilter]);
+    } else if (categoryFilter === null) {
+      setSelectedCategories([]);
     }
   }, [categoryFilter]);
 
@@ -84,6 +87,11 @@ const Products: React.FC = () => {
     // Price Filter
     result = result.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
 
+    // Rating Filter
+    if (minRating > 0) {
+      result = result.filter(p => p.rating >= minRating);
+    }
+
     // Availability Filter
     if (onlyInStock) {
       result = result.filter(p => p.stock > 0);
@@ -109,7 +117,7 @@ const Products: React.FC = () => {
     }
 
     return result;
-  }, [selectedCategories, sortBy, priceRange, onlyInStock, searchQueryParam]);
+  }, [products, selectedCategories, sortBy, priceRange, minRating, onlyInStock, searchQueryParam, filterParam]);
 
   const paginatedProducts = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -236,6 +244,56 @@ const Products: React.FC = () => {
             </div>
           </div>
 
+          {/* Rating */}
+          <div>
+            <h3 className="text-[10px] uppercase tracking-[0.3em] font-bold text-stone-900 mb-8">
+              Minimum Rating
+            </h3>
+            <div className="space-y-4">
+              {[4, 3, 2, 1].map((rating) => (
+                <label key={rating} className="flex items-center group cursor-pointer">
+                  <div className="relative flex items-center">
+                    <input
+                      type="radio"
+                      name="rating"
+                      checked={minRating === rating}
+                      onChange={() => setMinRating(rating)}
+                      className="sr-only"
+                    />
+                    <motion.div
+                      animate={{
+                        backgroundColor: minRating === rating ? '#1c1917' : '#ffffff',
+                        borderColor: minRating === rating ? '#1c1917' : '#e7e5e4'
+                      }}
+                      className="w-4 h-4 border transition-all rounded-full flex items-center justify-center"
+                    >
+                      <AnimatePresence>
+                        {minRating === rating && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            exit={{ scale: 0 }}
+                            className="w-1.5 h-1.5 bg-white rounded-full"
+                          />
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  </div>
+                  <div className="ml-4 flex items-center gap-1">
+                    <div className="flex text-amber-400">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} size={10} fill={i < rating ? "currentColor" : "none"} className={i < rating ? "" : "text-stone-200"} />
+                      ))}
+                    </div>
+                    <span className={`text-[10px] uppercase tracking-widest transition-all ${minRating === rating ? 'text-stone-900 font-bold' : 'text-stone-400 group-hover:text-stone-600'}`}>
+                      & Up
+                    </span>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
           {/* Availability */}
           <div>
             <h3 className="text-[10px] uppercase tracking-[0.3em] font-bold text-stone-900 mb-8">
@@ -278,6 +336,7 @@ const Products: React.FC = () => {
             onClick={() => {
               setSelectedCategories([]);
               setPriceRange([0, 10000]);
+              setMinRating(0);
               setOnlyInStock(false);
               setSortBy('newest');
             }}

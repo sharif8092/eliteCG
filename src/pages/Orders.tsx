@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
-import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { Order } from '../types';
-import { Package, Clock, ChevronRight, Truck, CheckCircle2, MapPin } from 'lucide-react';
+import { orderService } from '../services/orderService';
+import { Package, Clock, ChevronRight, Truck, CheckCircle2, MapPin, XCircle, Undo2, Loader2, AlertCircle } from 'lucide-react';
 
 const Orders: React.FC = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const getStatusSteps = (status: Order['status']) => {
     const steps = [
@@ -27,30 +27,37 @@ const Orders: React.FC = () => {
     }));
   };
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      if (!user) return;
-      try {
-        const q = query(
-          collection(db, 'orders'),
-          where('userId', '==', user.uid),
-          orderBy('createdAt', 'desc')
-        );
-        const querySnapshot = await getDocs(q);
-        const ordersData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Order[];
-        setOrders(ordersData);
-      } catch (error) {
-        console.error('Error fetching orders:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchOrders = async () => {
+    if (!user?.email) return;
+    try {
+      const ordersData = await orderService.getUserOrders(user.email, profile?.wcCustomerId);
+      setOrders(ordersData);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchOrders();
-  }, [user]);
+  }, [user, profile]);
+
+  const handleAction = async (orderId: string, action: 'cancel' | 'return') => {
+    if (!window.confirm(`Are you sure you want to ${action} this order?`)) return;
+    
+    setActionLoading(orderId);
+    try {
+      await orderService.requestOrderAction(orderId, action);
+      alert(`Success: Your ${action} request has been submitted.`);
+      await fetchOrders(); // Refresh orders
+    } catch (err) {
+      console.error(`Error requesting ${action}:`, err);
+      alert(`Error: Could not ${action} order. Please try again.`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -176,6 +183,38 @@ const Orders: React.FC = () => {
                         ))}
                       </div>
                     </div>
+                  </div>
+
+                  {/* Order Actions */}
+                  <div className="pt-8 flex flex-wrap gap-4 border-t border-stone-100">
+                    {order.status === 'pending' && (
+                      <button
+                        onClick={() => handleAction(order.id, 'cancel')}
+                        disabled={actionLoading === order.id}
+                        className="flex items-center space-x-2 px-6 py-3 bg-red-50 text-red-700 rounded-full text-[10px] uppercase tracking-widest font-bold hover:bg-red-100 transition-all disabled:opacity-50"
+                      >
+                        {actionLoading === order.id ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
+                        <span>Cancel Order</span>
+                      </button>
+                    )}
+                    
+                    {order.status === 'delivered' && (
+                      <button
+                        onClick={() => handleAction(order.id, 'return')}
+                        disabled={actionLoading === order.id}
+                        className="flex items-center space-x-2 px-6 py-3 bg-stone-900 text-white rounded-full text-[10px] uppercase tracking-widest font-bold hover:bg-stone-800 transition-all disabled:opacity-50"
+                      >
+                        {actionLoading === order.id ? <Loader2 size={14} className="animate-spin" /> : <Undo2 size={14} />}
+                        <span>Request Return</span>
+                      </button>
+                    )}
+
+                    {(order.status === 'processing' || order.status === 'shipped') && (
+                      <div className="flex items-center space-x-2 px-6 py-3 bg-stone-50 text-stone-500 rounded-full text-[10px] uppercase tracking-widest font-bold cursor-default">
+                        <AlertCircle size={14} />
+                        <span>Actions restricted while in transit</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

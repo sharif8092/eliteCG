@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { Product, CartItem } from '../types';
 import { MOCK_PRODUCTS } from '../constants';
+import { useAuth } from './AuthContext';
 
 // ── Free Gift Offer Config ──
 const FREE_GIFT_THRESHOLD = 2999; // Cart total above this gets a free gift
@@ -9,7 +10,7 @@ const FREE_GIFT_ID = 'free-gift-janamaz'; // Unique ID so it doesn't clash
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Product) => void;
+  addToCart: (product: Product, quantity?: number) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
@@ -20,25 +21,62 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    const saved = localStorage.getItem('cart');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const { user } = useAuth();
+  const [items, setItems] = useState<CartItem[]>([]);
   const isAutoUpdating = useRef(false);
+  const isInitialLoad = useRef(true);
 
+  // Load cart when user changes
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(items));
-  }, [items]);
+    const cartKey = user ? `cart_${user.uid}` : 'cart_guest';
+    const saved = localStorage.getItem(cartKey);
+    const loadedItems = saved ? JSON.parse(saved) : [];
+    
+    // If we were a guest and just logged in, we might want to "adopt" the guest cart
+    // But the user specifically said "login hone k baad iss k according" 
+    // implying they want the account's cart. 
+    // To be safe and helpful, if the account cart is empty, we use guest cart.
+    if (user && loadedItems.length === 0) {
+      const guestSaved = localStorage.getItem('cart_guest');
+      if (guestSaved) {
+        setItems(JSON.parse(guestSaved));
+        return;
+      }
+    }
 
-  const addToCart = (product: Product) => {
+    setItems(loadedItems);
+    isInitialLoad.current = false;
+  }, [user]);
+
+  // Save cart whenever items change (and after initial load)
+  useEffect(() => {
+    if (isInitialLoad.current) return;
+    const cartKey = user ? `cart_${user.uid}` : 'cart_guest';
+    localStorage.setItem(cartKey, JSON.stringify(items));
+    
+    // Legacy support for other parts of the app that might still look at 'cart'
+    localStorage.setItem('cart', JSON.stringify(items));
+  }, [items, user]);
+
+  const getTieredPrice = (price: number, qty: number) => {
+    if (qty >= 1000) return price * 0.7;
+    if (qty >= 500) return price * 0.8;
+    if (qty >= 200) return price * 0.9;
+    return price;
+  };
+
+  const addToCart = (product: Product, quantity: number = 1) => {
     setItems(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
+        const newQuantity = existing.quantity + quantity;
+        const newPrice = getTieredPrice(product.price, newQuantity);
         return prev.map(item =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          item.id === product.id ? { ...item, quantity: newQuantity, price: newPrice } : item
         );
       }
-      return [...prev, { ...product, quantity: 1 }];
+      const initialPrice = getTieredPrice(product.price, quantity);
+      return [...prev, { ...product, quantity, price: initialPrice }];
     });
   };
 
@@ -52,7 +90,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     setItems(prev =>
-      prev.map(item => (item.id === productId ? { ...item, quantity } : item))
+      prev.map(item => {
+        if (item.id === productId) {
+          const newPrice = getTieredPrice(item.originalPrice || item.price, quantity);
+          return { ...item, quantity, price: newPrice };
+        }
+        return item;
+      })
     );
   };
 

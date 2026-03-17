@@ -118,21 +118,33 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
           </h3>
 
           <div className="flex items-center justify-center gap-1">
-            <div className="flex text-amber-400">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  size={10}
-                  fill={i < Math.floor(product.rating) ? "currentColor" : "none"}
-                  className={i < Math.floor(product.rating) ? "" : "text-stone-200"}
-                />
-              ))}
+            <div className="flex items-center text-amber-400">
+              {[...Array(5)].map((_, i) => {
+                const ratingValue = i + 1;
+                const isFull = ratingValue <= Math.floor(product.rating);
+                const isHalf = !isFull && ratingValue <= Math.ceil(product.rating) && product.rating % 1 !== 0;
+
+                return (
+                  <div key={i} className="relative">
+                    <Star
+                      size={10}
+                      fill={isFull ? "currentColor" : "none"}
+                      className={isFull ? "" : "text-stone-200"}
+                    />
+                    {isHalf && (
+                      <div className="absolute inset-0 overflow-hidden w-1/2">
+                        <Star size={10} fill="currentColor" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             <span className="text-[8px] text-stone-400 font-bold tracking-widest uppercase">({product.reviewCount})</span>
           </div>
 
           <div className="flex items-center justify-center gap-3">
-            {product.originalPrice && (
+            {product.originalPrice && product.originalPrice > product.price && (
               <p className="text-stone-300 font-light text-xs line-through font-serif">
                 ₹{product.originalPrice.toLocaleString()}
               </p>

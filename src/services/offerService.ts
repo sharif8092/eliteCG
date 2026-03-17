@@ -12,6 +12,7 @@ const mapWooCouponToInternal = (coupon: any): Offer => {
         clicks: parseInt(meta('clicks') || '0'),
         expiry: coupon.date_expires ? coupon.date_expires.split('T')[0] : '',
         image: meta('image') || '',
+        link: meta('link') || '',
         type: (meta('type') as any) || 'deal'
     };
 };
@@ -38,6 +39,7 @@ export const offerService = {
             meta_data: [
                 { key: 'image', value: offer.image },
                 { key: 'type', value: offer.type },
+                { key: 'link', value: offer.link || '' },
                 { key: 'clicks', value: '0' }
             ]
         });
@@ -49,6 +51,7 @@ export const offerService = {
         const metaData = [];
         if (offer.image) metaData.push({ key: 'image', value: offer.image });
         if (offer.type) metaData.push({ key: 'type', value: offer.type });
+        if (offer.link !== undefined) metaData.push({ key: 'link', value: offer.link });
         if (offer.clicks !== undefined) metaData.push({ key: 'clicks', value: offer.clicks.toString() });
 
         await wooCommerceService.put(`/coupons/${id}`, {

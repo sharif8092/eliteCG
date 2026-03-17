@@ -13,6 +13,9 @@ import Checkout from './pages/Checkout';
 import Auth from './pages/Auth';
 import Orders from './pages/Orders';
 import Profile from './pages/Profile';
+import NewArrivals from './pages/NewArrivals';
+import BulkOrders from './pages/BulkOrders';
+import CustomBranding from './pages/CustomBranding';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ProductManagement from './pages/admin/ProductManagement';
 import OfferManagement from './pages/admin/OfferManagement';
@@ -20,6 +23,8 @@ import BlogManagement from './pages/admin/BlogManagement';
 import MediaLibrary from './pages/admin/MediaLibrary';
 import AdminOrders from './pages/admin/AdminOrders';
 import CategoryManagement from './pages/admin/CategoryManagement';
+import Blogs from './pages/Blogs';
+import BlogDetail from './pages/BlogDetail';
 import ErrorBoundary from './components/ErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
 
@@ -41,6 +46,11 @@ export default function App() {
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/orders" element={<Orders />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route path="/blogs" element={<Blogs />} />
+                  <Route path="/blog/:id" element={<BlogDetail />} />
+                  <Route path="/new-arrivals" element={<NewArrivals />} />
+                  <Route path="/bulk-orders" element={<BulkOrders />} />
+                  <Route path="/custom-branding" element={<CustomBranding />} />
 
                   {/* Admin Routes */}
                   <Route path="/admin" element={<AdminDashboard />} />

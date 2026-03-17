@@ -34,7 +34,8 @@ const OfferManagement: React.FC = () => {
         clicks: 0,
         expiry: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         type: 'banner',
-        image: ''
+        image: '',
+        link: ''
     });
 
     useEffect(() => {
@@ -63,7 +64,8 @@ const OfferManagement: React.FC = () => {
                 clicks: offer.clicks,
                 expiry: offer.expiry,
                 type: offer.type || 'banner',
-                image: offer.image || ''
+                image: offer.image || '',
+                link: offer.link || ''
             });
         } else {
             setEditingOffer(null);
@@ -74,7 +76,8 @@ const OfferManagement: React.FC = () => {
                 clicks: 0,
                 expiry: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
                 type: 'banner',
-                image: ''
+                image: '',
+                link: ''
             });
         }
         setIsModalOpen(true);
@@ -294,6 +297,17 @@ const OfferManagement: React.FC = () => {
                                             onChange={e => setFormData({ ...formData, expiry: e.target.value })}
                                         />
                                     </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400">CTA Link / Product URL</label>
+                                    <input
+                                        type="text"
+                                        className="w-full bg-stone-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-4 focus:ring-emerald-500/5 transition-all outline-none"
+                                        placeholder="e.g. /products?category=Abaya or /product/123"
+                                        value={formData.link}
+                                        onChange={e => setFormData({ ...formData, link: e.target.value })}
+                                    />
                                 </div>
 
                                 <div className="space-y-2">
