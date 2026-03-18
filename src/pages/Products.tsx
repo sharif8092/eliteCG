@@ -8,6 +8,7 @@ import Skeleton from '../components/Skeleton';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
 import { motion, AnimatePresence } from 'motion/react';
+import SEO from '../components/SEO';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -16,6 +17,8 @@ const Products: React.FC = () => {
   const categoryFilter = searchParams.get('category');
   const searchQueryParam = searchParams.get('search');
   const filterParam = searchParams.get('filter');
+  const minPriceParam = searchParams.get('min_price');
+  const maxPriceParam = searchParams.get('max_price');
   const { addToCart } = useCart();
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -49,14 +52,21 @@ const Products: React.FC = () => {
     fetchData();
   }, []);
 
-  // Sync category filter from URL params
+  // Sync filters from URL params
   useEffect(() => {
     if (categoryFilter) {
       setSelectedCategories([categoryFilter]);
     } else if (categoryFilter === null) {
       setSelectedCategories([]);
     }
-  }, [categoryFilter]);
+
+    if (minPriceParam || maxPriceParam) {
+      setPriceRange([
+        minPriceParam ? parseInt(minPriceParam) : 0,
+        maxPriceParam ? parseInt(maxPriceParam) : 10000
+      ]);
+    }
+  }, [categoryFilter, minPriceParam, maxPriceParam]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -134,8 +144,38 @@ const Products: React.FC = () => {
     );
   };
 
+  const seoData = useMemo(() => {
+    if (searchQueryParam) {
+      return {
+        title: `Search results for "${searchQueryParam}"`,
+        description: `Explore corporate gifting options matching "${searchQueryParam}". Find the perfect bespoke gifts for your business needs.`
+      };
+    }
+    if (categoryFilter) {
+      return {
+        title: `Premium ${categoryFilter} Collection`,
+        description: `Browse our curated selection of premium ${categoryFilter.toLowerCase()}. Perfect for corporate gifting, employee appreciation, and professional events.`
+      };
+    }
+    if (filterParam === 'new-arrivals') {
+      return {
+        title: "New Arrivals - Latest Corporate Gifts",
+        description: "Discover our newest corporate gift collections. Freshly landed items for your next business event or employee welcome kit."
+      };
+    }
+    return {
+      title: "Browse Corporate Gift Collection",
+      description: "Explore Ababil's complete range of premium corporate gifts. From tech kits to executive hampers, find the ideal gifts for your professional network."
+    };
+  }, [categoryFilter, searchQueryParam, filterParam]);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+      <SEO 
+        title={seoData.title}
+        description={seoData.description}
+        ogType="website"
+      />
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 space-y-8 md:space-y-0">
         <div className="max-w-xl">
           <span className="text-emerald-800 text-[10px] uppercase tracking-[0.4em] font-bold mb-4 block">
@@ -240,6 +280,28 @@ const Products: React.FC = () => {
               <div className="flex justify-between text-[10px] uppercase tracking-widest font-bold text-stone-400">
                 <span>₹{priceRange[0]}</span>
                 <span>Up to ₹{priceRange[1]}</span>
+              </div>
+              
+              {/* Quick Budget Filters */}
+              <div className="pt-4 grid grid-cols-1 gap-2">
+                {[
+                  { label: 'Under ₹500', min: 0, max: 500 },
+                  { label: '₹500 - ₹1000', min: 500, max: 1000 },
+                  { label: '₹1000 - ₹2000', min: 1000, max: 2000 },
+                  { label: '₹2000+', min: 2000, max: 10000 },
+                ].map((b, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setPriceRange([b.min, b.max])}
+                    className={`text-left text-[9px] uppercase tracking-widest py-2 px-3 rounded-lg border transition-all ${
+                      priceRange[0] === b.min && priceRange[1] === b.max
+                        ? 'bg-stone-900 text-white border-stone-900'
+                        : 'text-stone-400 border-stone-100 hover:border-stone-200'
+                    }`}
+                  >
+                    {b.label}
+                  </button>
+                ))}
               </div>
             </div>
           </div>

@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { MessageCircle, Phone, Mail, X, MessageSquare } from 'lucide-react';
 
 const CONTACT_INFO = {
-  whatsapp: '919000000000',
-  phone: '+919000000000',
+  whatsapp: '917909096738',
+  phone: '+917909096738',
   email: 'support@corporategifting.store'
 };
 

@@ -10,7 +10,7 @@ const FREE_GIFT_ID = 'free-gift-janamaz'; // Unique ID so it doesn't clash
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Product, quantity?: number) => void;
+  addToCart: (product: Product, quantity: number, branding?: string, isSample?: boolean, customPrice?: number) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
@@ -65,18 +65,39 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return price;
   };
 
-  const addToCart = (product: Product, quantity: number = 1) => {
+  const addToCart = (product: Product, quantity: number = 1, branding: string = 'None', isSample: boolean = false, customPrice?: number) => {
     setItems(prev => {
-      const existing = prev.find(item => item.id === product.id);
+      // Create a unique key for the item based on its configuration
+      // This allows having the same product as both a sample and a bulk order
+      const itemKey = `${product.id}-${branding}-${isSample ? 'sample' : 'bulk'}`;
+      
+      const existing = prev.find(item => {
+        const existingKey = `${item.id}-${(item as any).branding || 'None'}-${item.isSample ? 'sample' : 'bulk'}`;
+        return existingKey === itemKey;
+      });
+
       if (existing) {
         const newQuantity = existing.quantity + quantity;
-        const newPrice = getTieredPrice(product.price, newQuantity);
-        return prev.map(item =>
-          item.id === product.id ? { ...item, quantity: newQuantity, price: newPrice } : item
-        );
+        // If it's a sample, price is fixed. If bulk, recalculate tiered price.
+        const newPrice = isSample ? (customPrice || existing.price) : getTieredPrice(product.price, newQuantity);
+        
+        return prev.map(item => {
+          const checkKey = `${item.id}-${(item as any).branding || 'None'}-${item.isSample ? 'sample' : 'bulk'}`;
+          return checkKey === itemKey ? { ...item, quantity: newQuantity, price: newPrice } : item;
+        });
       }
-      const initialPrice = getTieredPrice(product.price, quantity);
-      return [...prev, { ...product, quantity, price: initialPrice }];
+
+      // Fixed price for sample, tiered for bulk
+      const initialPrice = isSample ? (customPrice || product.price * 3) : getTieredPrice(product.price, quantity);
+      
+      return [...prev, { 
+        ...product, 
+        quantity, 
+        price: initialPrice, 
+        isSample, 
+        branding,
+        originalPrice: product.price 
+      } as CartItem];
     });
   };
 

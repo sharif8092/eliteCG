@@ -21,6 +21,11 @@ export default defineConfig(({mode}) => {
           target: 'https://backend.corporategifting.store',
           changeOrigin: true,
           secure: false,
+        },
+        '/api': {
+          target: 'http://localhost:8080',
+          changeOrigin: true,
+          secure: false,
         }
       },
       // HMR is disabled in AI Studio via DISABLE_HMR env var.

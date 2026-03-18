@@ -216,7 +216,7 @@ const Navbar: React.FC = () => {
                   <span className="whitespace-nowrap">Request Quote</span>
                 </button>
 
-                <a href="tel:+919000000000" className="hidden 2xl:flex items-center gap-2 px-4 py-2.5 text-stone-900 rounded-full text-[9px] xl:text-[10px] uppercase tracking-widest font-bold border border-stone-200 hover:bg-stone-50 transition-all">
+                <a href="tel:+917909096738" className="hidden 2xl:flex items-center gap-2 px-4 py-2.5 text-stone-900 rounded-full text-[9px] xl:text-[10px] uppercase tracking-widest font-bold border border-stone-200 hover:bg-stone-50 transition-all">
                   <span className="whitespace-nowrap">Talk to Expert</span>
                 </a>
 
@@ -274,7 +274,7 @@ const Navbar: React.FC = () => {
                     Request Quote
                   </button>
                   <a
-                    href="tel:+919000000000"
+                    href="tel:+917909096738"
                     className="flex items-center justify-center gap-2 w-full py-4 border border-stone-200 text-stone-900 rounded-full text-[10px] uppercase tracking-widest font-bold"
                   >
                     📞 Talk to Gifting Expert

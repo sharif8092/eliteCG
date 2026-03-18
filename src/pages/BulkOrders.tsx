@@ -14,6 +14,7 @@ import { useQuotation } from '../hooks/useQuotation';
 import { useCart } from '../context/CartContext';
 import QuotationForm from '../components/QuotationForm';
 import { useState } from 'react';
+import SEO from '../components/SEO';
 
 const BulkOrders: React.FC = () => {
   const { getQuotationLink, isMobile } = useQuotation();
@@ -48,6 +49,11 @@ const BulkOrders: React.FC = () => {
 
   return (
     <div className="bg-stone-50 min-h-screen">
+      <SEO 
+        title="Enterprise Gifting Solutions | Bulk Orders Simplified"
+        description="Professional bulk gifting solutions for enterprises. Tiered pricing, custom branding, and Pan-India logistics for large-scale corporate requirements."
+        keywords="Bulk Corporate Gifting, Enterprise Gifting Solutions, Wholesale Business Gifts, Corporate Gifting Logistics"
+      />
       {/* Header */}
       <section className="bg-white py-24 border-b border-stone-100 overflow-hidden relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -148,7 +154,7 @@ const BulkOrders: React.FC = () => {
               Request Bulk Quote
             </button>
             <a 
-              href="https://wa.me/919000000000"
+              href="https://wa.me/917909096738"
               className="flex items-center gap-3 text-white font-bold text-xs uppercase tracking-[0.2em] group"
             >
               <MessageCircle size={20} className="text-emerald-400" />

@@ -8,6 +8,7 @@ import { offerService } from '../services/offerService';
 import { blogService } from '../services/blogService';
 import { categoryService, Category } from '../services/categoryService';
 import { Product, Offer, BlogPost } from '../types';
+import SEO from '../components/SEO';
 
 const DEFAULT_HERO_SLIDES = [
   {
@@ -105,6 +106,12 @@ const Home: React.FC = () => {
 
   return (
     <div className="pb-24">
+      <SEO 
+        title="Premium Corporate Gifting Solutions in India"
+        description="Ababil is India's premium corporate gifting partner. We specialize in bespoke business gifts, custom branded merchandise, and bulk gifting solutions for events and employees. Pan-India delivery with GST compliance."
+        keywords="Corporate Gifting India, Bulk Business Gifts, Professional Gifting Solutions, Custom Branded Gifts, Employee Welcome Kits, Executive Gifts, B2B Gifting"
+        ogType="website"
+      />
       {/* ═══ PROMOTIONAL BANNER STRIP ═══ */}
       <section className="bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-700 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23fff\' fill-opacity=\'1\'%3E%3Ccircle cx=\'10\' cy=\'10\' r=\'1\'/%3E%3C/g%3E%3C/svg%3E")' }} />
@@ -282,12 +289,42 @@ const Home: React.FC = () => {
           }
         </div>
 
-        {/* If fewer than expected products */}
-        {products.filter(p => selectedCategory === 'All' || p.categories.some(cat => cat.toLowerCase() === selectedCategory.toLowerCase())).length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-stone-400 font-light italic">No products found in this category yet.</p>
+      </section>
+
+      {/* ═══ SHOP BY BUDGET ═══ */}
+      <section className="bg-stone-50 py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <span className="text-emerald-800 text-[10px] uppercase tracking-[0.5em] font-bold mb-3 block">Gift by Value</span>
+            <h2 className="text-4xl md:text-5xl font-serif text-stone-900">Shop by <span className="italic">Budget</span></h2>
           </div>
-        )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              { label: 'Under ₹500', min: 0, max: 500, image: 'https://images.unsplash.com/photo-1549463591-147604d4c815?q=80&w=800&auto=format&fit=crop' },
+              { label: '₹500 - ₹1000', min: 500, max: 1000, image: 'https://images.unsplash.com/photo-1513201099705-a9746e1e201f?q=80&w=800&auto=format&fit=crop' },
+              { label: '₹1000 - ₹2000', min: 1000, max: 2000, image: 'https://images.unsplash.com/photo-1523293836414-f04e712e1f3b?q=80&w=800&auto=format&fit=crop' },
+              { label: 'Premium Gifts', min: 2000, max: 50000, image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop' },
+            ].map((budget, i) => (
+              <Link 
+                key={i}
+                to={`/products?min_price=${budget.min}&max_price=${budget.max}`}
+                className="group relative aspect-[4/5] rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500"
+              >
+                <img 
+                  src={budget.image} 
+                  alt={budget.label} 
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-900/80 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
+                <div className="absolute bottom-8 left-8">
+                  <h3 className="text-white text-xl font-serif italic mb-1">{budget.label}</h3>
+                  <span className="text-[9px] text-white/60 uppercase tracking-widest font-bold border-b border-white/20 pb-1 group-hover:border-white transition-colors">Explore Collection</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* ═══ CORPORATE & CUSTOMIZATION SERVICES ═══ */}

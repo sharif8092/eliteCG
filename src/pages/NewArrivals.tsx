@@ -5,6 +5,7 @@ import { productService } from '../services/productService';
 import { Product } from '../types';
 import ProductCard from '../components/ProductCard';
 import Skeleton from '../components/Skeleton';
+import SEO from '../components/SEO';
 
 const NewArrivals: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -30,6 +31,11 @@ const NewArrivals: React.FC = () => {
 
   return (
     <div className="bg-stone-50 min-h-screen">
+      <SEO 
+        title="The New Edit | Latest Corporate Gift Collection"
+        description="Discover our latest curation of premium corporate gifts. Freshly landed items designed for modern professional excellence and brand elevation."
+        keywords="New Corporate Gifts, Latest Gifting Trends, Modern Business Gifts, Fresh Arrival Gifts"
+      />
       {/* Hero Section */}
       <section className="relative h-[60vh] flex items-center justify-center overflow-hidden bg-stone-900">
         <div className="absolute inset-0 opacity-40">
@@ -126,7 +132,7 @@ const NewArrivals: React.FC = () => {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
             <a 
-              href="https://wa.me/919000000000?text=I'm looking for a bespoke gifting solution."
+              href="https://wa.me/917909096738?text=I'm looking for a bespoke gifting solution."
               target="_blank"
               rel="noopener noreferrer"
               className="px-10 py-5 bg-stone-900 text-white rounded-full font-bold text-[10px] uppercase tracking-[0.2em] hover:bg-emerald-900 transition-all shadow-xl"

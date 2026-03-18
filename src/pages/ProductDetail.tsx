@@ -17,6 +17,7 @@ import Skeleton from '../components/Skeleton';
 import { Product, Review, CartItem } from '../types';
 import { useQuotation } from '../hooks/useQuotation';
 import QuotationForm from '../components/QuotationForm';
+import SEO from '../components/SEO';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -36,13 +37,24 @@ const ProductDetail: React.FC = () => {
   const [isAdded, setIsAdded] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedBranding, setSelectedBranding] = useState<string>('None');
+  const [backendConfig, setBackendConfig] = useState<any>(null);
+  const [isSample, setIsSample] = useState(false);
 
-  const brandingOptions = [
-    { id: 'none', name: 'None', price: 0, icon: <X size={14} /> },
-    { id: 'screen', name: 'Screen Printing', price: 15, icon: <Check size={14} /> },
-    { id: 'laser', name: 'Laser Engraving', price: 25, icon: <Sparkles size={14} /> },
-    { id: 'digital', name: 'Digital Print', price: 20, icon: <Send size={14} /> },
-  ];
+  const brandingOptions = useMemo(() => {
+    if (backendConfig?.branding_options) {
+      return backendConfig.branding_options.map((opt: any) => ({
+        ...opt,
+        id: opt.name.toLowerCase().replace(/\s+/g, '-'),
+        icon: opt.name === 'None' ? <X size={14} /> : (opt.name.includes('Laser') ? <Sparkles size={14} /> : <Check size={14} />)
+      }));
+    }
+    return [
+      { id: 'none', name: 'None', price: 0, icon: <X size={14} /> },
+      { id: 'screen', name: 'Screen Printing', price: 15, icon: <Check size={14} /> },
+      { id: 'laser', name: 'Laser Engraving', price: 25, icon: <Sparkles size={14} /> },
+      { id: 'digital', name: 'Digital Print', price: 20, icon: <Send size={14} /> },
+    ];
+  }, [backendConfig]);
 
   // Review form state
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -65,22 +77,55 @@ const ProductDetail: React.FC = () => {
   }, [profile]);
 
   const getTieredPrice = (price: number, qty: number) => {
-    if (qty >= 1000) return price * 0.7; // 30% OFF
-    if (qty >= 500) return price * 0.8;  // 20% OFF
-    if (qty >= 200) return price * 0.9;  // 10% OFF
+    if (!backendConfig?.bulk_pricing_tiers) {
+        if (qty >= 1000) return price * 0.7;
+        if (qty >= 500) return price * 0.8;
+        if (qty >= 200) return price * 0.9;
+        return price;
+    }
+
+    const tiers = [...backendConfig.bulk_pricing_tiers].sort((a, b) => b.min_qty - a.min_qty);
+    const applicableTier = tiers.find(t => qty >= t.min_qty);
+    if (applicableTier) {
+        return price * (1 - applicableTier.discount / 100);
+    }
     return price;
   };
 
   const brandingPrice = brandingOptions.find(b => b.name === selectedBranding)?.price || 0;
   const basePrice = product ? getTieredPrice(product.price, quantity) : 0;
-  const currentUnitPrice = basePrice + brandingPrice;
+  
+  // Apply 3x multiplier for samples
+  const sampleMultiplier = backendConfig?.sample_price_multiplier || 3;
+  const unitPriceAfterSample = isSample ? (product?.price || 0) * sampleMultiplier : basePrice;
+  
+  const currentUnitPrice = unitPriceAfterSample + brandingPrice;
+
+  // Handle sample mode logic
+  useEffect(() => {
+    if (isSample) {
+      setQuantity(1);
+    } else if (quantity === 1 && backendConfig?.moq_default) {
+      setQuantity(backendConfig.moq_default);
+    }
+  }, [isSample]);
 
   useEffect(() => {
     const fetchProductData = async () => {
       if (!id) return;
       setLoading(true);
       try {
-        const found = await productService.getProductById(id);
+        const [found, configResponse] = await Promise.all([
+          productService.getProductById(id),
+          import('../services/wooCommerceService').then(m => m.default.get('/config'))
+        ]) as [Product | null, any];
+
+        if (configResponse.data) {
+          const config = configResponse.data;
+          setBackendConfig(config);
+          if (config.moq_default) setQuantity(config.moq_default);
+        }
+
         if (found) {
           setProduct(found);
           // Fetch related
@@ -105,7 +150,7 @@ const ProductDetail: React.FC = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
-    addToCart(product, quantity); // Use the new quantity support
+    addToCart(product, quantity, selectedBranding, isSample, currentUnitPrice);
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 2000);
   };
@@ -178,8 +223,46 @@ const ProductDetail: React.FC = () => {
     );
   }
 
+  const productSchema = useMemo(() => {
+    if (!product) return null;
+    return {
+      "@context": "https://schema.org/",
+      "@type": "Product",
+      "name": product.name,
+      "image": product.images,
+      "description": product.description.replace(/<[^>]*>?/gm, ''), // Strip HTML
+      "brand": {
+        "@type": "Brand",
+        "name": "Ababil"
+      },
+      "sku": product.id,
+      "offers": {
+        "@type": "Offer",
+        "url": window.location.href,
+        "priceCurrency": "INR",
+        "price": product.price,
+        "availability": product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+        "priceValidUntil": "2026-12-31"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": product.rating,
+        "reviewCount": product.reviewCount
+      }
+    };
+  }, [product]);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+      {product && (
+        <SEO 
+          title={product.name}
+          description={product.description.replace(/<[^>]*>?/gm, '').slice(0, 160)}
+          ogType="product"
+          ogImage={product.images[0]}
+          jsonLd={productSchema}
+        />
+      )}
       <div className="flex flex-col lg:flex-row gap-24">
         {/* Image Gallery */}
         <div className="w-full lg:w-1/2 space-y-8">
@@ -288,48 +371,106 @@ const ProductDetail: React.FC = () => {
             dangerouslySetInnerHTML={{ __html: product?.description || '' }}
           />
 
-          {/* Tiered Pricing Table */}
-          <div className="bg-white rounded-3xl p-8 border border-stone-100 shadow-sm max-w-lg">
-            <div className="flex items-center justify-between mb-8">
-              <div className="space-y-1">
-                <h4 className="text-[10px] uppercase tracking-[0.2em] font-bold text-stone-900">Volume Advantage</h4>
-                <p className="text-[10px] text-stone-400 font-medium">Select a tier to update quantity</p>
-              </div>
-              <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full border border-emerald-100">
-                <TrendingUp size={12} />
-                <span className="text-[9px] font-bold uppercase tracking-widest">Bulk Savings</span>
-              </div>
+          {/* ═══ ORDER OPTIONS ═══ */}
+          <div className="space-y-12">
+            {/* Sample vs Bulk Selection */}
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => setIsSample(false)}
+                className={`p-6 rounded-[2rem] border-2 transition-all text-left relative overflow-hidden group ${
+                  !isSample ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-100 bg-stone-50 hover:border-stone-200'
+                }`}
+              >
+                <div className={`text-[8px] uppercase tracking-widest font-bold mb-2 ${!isSample ? 'text-stone-400' : 'text-stone-400'}`}>Professional Choice</div>
+                <div className="text-sm font-serif italic mb-1">Bulk Quotation</div>
+                <div className="text-[10px] opacity-60">Best for Corporates</div>
+                {!isSample && <div className="absolute top-4 right-6 text-emerald-400"><TrendingUp size={16} /></div>}
+              </button>
+
+              <button
+                onClick={() => setIsSample(true)}
+                className={`p-6 rounded-[2rem] border-2 transition-all text-left relative overflow-hidden group ${
+                  isSample ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-100 bg-stone-50 hover:border-stone-200'
+                }`}
+              >
+                <div className={`text-[8px] uppercase tracking-widest font-bold mb-2 ${isSample ? 'text-stone-400' : 'text-stone-400'}`}>Product Evaluation</div>
+                <div className="text-sm font-serif italic mb-1">Request Sample</div>
+                <div className="text-[10px] opacity-60">1 Unit @ {sampleMultiplier}x Price</div>
+                {isSample && <div className="absolute top-4 right-6 text-emerald-400"><Sparkles size={16} /></div>}
+              </button>
             </div>
+
+            {/* Volume Advantage - Only show if NOT a sample */}
+            {!isSample && (
+              <div className="bg-white rounded-3xl p-8 border border-stone-100 shadow-sm max-w-lg">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="space-y-1">
+                    <h4 className="text-[10px] uppercase tracking-[0.2em] font-bold text-stone-900">Volume Advantage</h4>
+                    <p className="text-[10px] text-stone-400 font-medium">Select a tier to update quantity</p>
+                  </div>
+                  <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full border border-emerald-100">
+                    <TrendingUp size={12} />
+                    <span className="text-[9px] font-bold uppercase tracking-widest">Bulk Savings</span>
+                  </div>
+                </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {[
-                { range: '50-200', qty: 50, discount: 'Base', desc: 'Starting at' },
-                { range: '200-500', qty: 200, discount: '10% OFF', desc: 'Volume' },
-                { range: '500-1000', qty: 500, discount: '20% OFF', desc: 'Wholesale' },
-                { range: '1000+', qty: 1000, discount: '30% OFF', desc: 'Partner' },
-              ].map((tier, idx) => {
-                const isActive = (idx === 0 && quantity >= 50 && quantity < 200) ||
-                                (idx === 1 && quantity >= 200 && quantity < 500) ||
-                                (idx === 2 && quantity >= 500 && quantity < 1000) ||
-                                (idx === 3 && quantity >= 1000);
-                
-                return (
-                  <button 
-                    key={idx} 
-                    onClick={() => setQuantity(tier.qty)}
-                    className={`text-left p-4 rounded-2xl border transition-all duration-300 group ${
-                      isActive
-                        ? 'bg-stone-900 border-stone-900 shadow-xl shadow-stone-900/10 scale-105'
-                        : 'bg-stone-50 border-stone-100 hover:border-stone-300'
-                    }`}
-                  >
-                    <div className={`text-[8px] uppercase tracking-tighter mb-1 font-bold ${isActive ? 'text-stone-400' : 'text-stone-400 group-hover:text-stone-500'}`}>{tier.desc}</div>
-                    <div className={`text-[11px] font-bold mb-1 ${isActive ? 'text-white' : 'text-stone-900'}`}>{tier.range}</div>
-                    <div className={`text-[9px] font-bold uppercase ${isActive ? 'text-emerald-400' : 'text-emerald-600'}`}>{tier.discount}</div>
-                  </button>
-                );
-              })}
+              {backendConfig?.bulk_pricing_tiers ? (
+                backendConfig.bulk_pricing_tiers.slice(1).map((tier: any, idx: number) => {
+                  const isActive = (idx === 0 && quantity >= tier.min_qty && quantity < (backendConfig.bulk_pricing_tiers[idx+2]?.min_qty || Infinity)) ||
+                                  (idx > 0 && quantity >= tier.min_qty && quantity < (backendConfig.bulk_pricing_tiers[idx+2]?.min_qty || Infinity));
+                  
+                  // Simplified active logic for the loop
+                  const nextTierMin = backendConfig.bulk_pricing_tiers.find((t: any) => t.min_qty > tier.min_qty)?.min_qty || Infinity;
+                  const isEffectiveActive = quantity >= tier.min_qty && quantity < nextTierMin;
+
+                  return (
+                    <button 
+                      key={idx} 
+                      onClick={() => setQuantity(tier.min_qty)}
+                      className={`text-left p-4 rounded-2xl border transition-all duration-300 group ${
+                        isEffectiveActive
+                          ? 'bg-stone-900 border-stone-900 shadow-xl shadow-stone-900/10 scale-105'
+                          : 'bg-stone-50 border-stone-100 hover:border-stone-300'
+                      }`}
+                    >
+                      <div className={`text-[8px] uppercase tracking-tighter mb-1 font-bold ${isEffectiveActive ? 'text-stone-400' : 'text-stone-400 group-hover:text-stone-500'}`}>{tier.label}</div>
+                      <div className={`text-[11px] font-bold mb-1 ${isEffectiveActive ? 'text-white' : 'text-stone-900'}`}>{tier.min_qty}+</div>
+                      <div className={`text-[9px] font-bold uppercase ${isEffectiveActive ? 'text-emerald-400' : 'text-emerald-600'}`}>{tier.discount}% OFF</div>
+                    </button>
+                  );
+                })
+              ) : (
+                [
+                  { range: '50-200', qty: 50, discount: 'Base', desc: 'Starting at' },
+                  { range: '200-500', qty: 200, discount: '10% OFF', desc: 'Volume' },
+                  { range: '500-1000', qty: 500, discount: '20% OFF', desc: 'Wholesale' },
+                  { range: '1000+', qty: 1000, discount: '30% OFF', desc: 'Partner' },
+                ].map((tier, idx) => {
+                  const isActive = (idx === 0 && quantity >= 50 && quantity < 200) ||
+                                  (idx === 1 && quantity >= 200 && quantity < 500) ||
+                                  (idx === 2 && quantity >= 500 && quantity < 1000) ||
+                                  (idx === 3 && quantity >= 1000);
+                  
+                  return (
+                    <button 
+                      key={idx} 
+                      onClick={() => setQuantity(tier.qty)}
+                      className={`text-left p-4 rounded-2xl border transition-all duration-300 group ${
+                        isActive
+                          ? 'bg-stone-900 border-stone-900 shadow-xl shadow-stone-900/10 scale-105'
+                          : 'bg-stone-50 border-stone-100 hover:border-stone-300'
+                      }`}
+                    >
+                      <div className={`text-[8px] uppercase tracking-tighter mb-1 font-bold ${isActive ? 'text-stone-400' : 'text-stone-400 group-hover:text-stone-500'}`}>{tier.desc}</div>
+                      <div className={`text-[11px] font-bold mb-1 ${isActive ? 'text-white' : 'text-stone-900'}`}>{tier.range}</div>
+                      <div className={`text-[9px] font-bold uppercase ${isActive ? 'text-emerald-400' : 'text-emerald-600'}`}>{tier.discount}</div>
+                    </button>
+                  );
+                })
+              )}
             </div>
           </div>
+        )}
 
           {/* Branding Options */}
           <div className="space-y-6 max-w-lg">
@@ -372,7 +513,7 @@ const ProductDetail: React.FC = () => {
               </div>
               <div>
                 <span className="text-[8px] uppercase tracking-widest font-bold text-stone-400 block mb-0.5">Estimated Delivery</span>
-                <span className="text-xs font-bold text-stone-900">7 - 12 Business Days</span>
+                <span className="text-xs font-bold text-stone-900">{backendConfig?.lead_time_default || '7 - 12 Business Days'}</span>
               </div>
             </div>
             <div className="w-[1px] h-8 bg-stone-100"></div>
@@ -390,27 +531,43 @@ const ProductDetail: React.FC = () => {
           <div className="space-y-8 pt-8 border-t border-stone-100">
             <div className="flex flex-col gap-8">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-6">
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between mb-1 px-4">
-                    <span className="text-[9px] uppercase tracking-widest font-bold text-stone-400">Quantity</span>
-                    <span className="text-[8px] uppercase tracking-widest font-bold text-emerald-600">MOQ: 50</span>
+                {!isSample ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between mb-1 px-4">
+                      <span className="text-[9px] uppercase tracking-widest font-bold text-stone-400">Quantity</span>
+                      <span className="text-[8px] uppercase tracking-widest font-bold text-emerald-600">MOQ: {backendConfig?.moq_default || 50}</span>
+                    </div>
+                    <div className="flex items-center justify-between border border-stone-200 rounded-full px-8 py-4 min-w-[200px] bg-white">
+                      <button
+                        onClick={() => setQuantity(Math.max(backendConfig?.moq_default || 50, quantity - 1))}
+                        className="text-stone-400 hover:text-stone-900 transition-colors p-1"
+                      >
+                        -
+                      </button>
+                      <span className="font-bold text-sm text-stone-900">{quantity}</span>
+                      <button
+                        onClick={() => setQuantity(quantity + 1)}
+                        className="text-stone-400 hover:text-stone-900 transition-colors p-1"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between border border-stone-200 rounded-full px-8 py-4 min-w-[200px] bg-white">
-                    <button
-                      onClick={() => setQuantity(Math.max(50, quantity - 1))}
-                      className="text-stone-400 hover:text-stone-900 transition-colors p-1"
-                    >
-                      -
-                    </button>
-                    <span className="font-bold text-sm text-stone-900">{quantity}</span>
-                    <button
-                      onClick={() => setQuantity(quantity + 1)}
-                      className="text-stone-400 hover:text-stone-900 transition-colors p-1"
-                    >
-                      +
-                    </button>
+                ) : (
+                  <div className="flex-grow p-6 bg-emerald-50 rounded-[2rem] border border-emerald-100">
+                    <div className="flex items-start gap-4">
+                      <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
+                        <Info size={14} />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-emerald-900 mb-1">Sample Mode</h4>
+                        <p className="text-[10px] text-emerald-700 leading-tight font-medium">
+                          Single unit for evaluation. Priced at {sampleMultiplier}x. Refundable on bulk order.
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
                 
                 <div className="flex-grow flex flex-col gap-2">
                   <span className="text-[9px] uppercase tracking-widest font-bold text-stone-400 invisible">Action</span>
@@ -439,7 +596,7 @@ const ProductDetail: React.FC = () => {
                           className="flex items-center gap-2"
                         >
                           <ShoppingBag size={16} />
-                          Add to Quote
+                          {isSample ? 'Add Sample to Bag' : 'Add to Quote'}
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -458,7 +615,7 @@ const ProductDetail: React.FC = () => {
                 
                 <div className="flex items-center gap-4">
                   <a
-                    href="tel:+919000000000"
+                    href="tel:+917909096738"
                     className="flex-grow flex items-center justify-center gap-3 py-5 bg-white text-stone-900 border-2 border-stone-200 rounded-full font-bold text-xs uppercase tracking-[0.2em] hover:bg-stone-50 transition-all group"
                   >
                     <Phone size={18} className="group-hover:rotate-12 transition-transform" />
@@ -474,6 +631,7 @@ const ProductDetail: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
 
           {/* Product Specifications Table */}
           <div className="pt-12 border-t border-stone-100">
@@ -484,8 +642,8 @@ const ProductDetail: React.FC = () => {
             
             <div className="grid grid-cols-1 gap-4">
               {[
-                { label: 'Minimum Order', value: '50 Units' },
-                { label: 'Lead Time', value: '7-12 Business Days' },
+                { label: 'Minimum Order', value: `${backendConfig?.moq_default || 50} Units` },
+                { label: 'Lead Time', value: backendConfig?.lead_time_default || '7-12 Business Days' },
                 { label: 'Customization', value: 'Available' },
                 { label: 'Material', value: 'Premium Grade' },
                 { label: 'Quality Check', value: 'Triple Inspection' },

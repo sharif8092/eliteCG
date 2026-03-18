@@ -26,7 +26,7 @@ export const useQuotation = () => {
       } else {
         message = "Hi, I'm interested in corporate gifting solutions. Please provide a quote.";
       }
-      return `https://wa.me/919000000000?text=${encodeURIComponent(message)}`;
+      return `https://wa.me/917909096738?text=${encodeURIComponent(message)}`;
     } else {
       // YITH on Desktop
       return 'https://backend.corporategifting.store/request-quote/';

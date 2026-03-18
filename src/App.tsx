@@ -28,45 +28,49 @@ import BlogDetail from './pages/BlogDetail';
 import ErrorBoundary from './components/ErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
 
+import { HelmetProvider } from 'react-helmet-async';
+
 export default function App() {
   return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <CartProvider>
-          <WishlistProvider>
-            <Router>
-              <Layout>
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/products" element={<Products />} />
-                  <Route path="/product/:id" element={<ProductDetail />} />
-                  <Route path="/cart" element={<Cart />} />
-                  <Route path="/wishlist" element={<Wishlist />} />
-                  <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/orders" element={<Orders />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/blogs" element={<Blogs />} />
-                  <Route path="/blog/:id" element={<BlogDetail />} />
-                  <Route path="/new-arrivals" element={<NewArrivals />} />
-                  <Route path="/bulk-orders" element={<BulkOrders />} />
-                  <Route path="/custom-branding" element={<CustomBranding />} />
+    <HelmetProvider>
+      <ErrorBoundary>
+        <AuthProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <Router>
+                <Layout>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/products" element={<Products />} />
+                    <Route path="/product/:id" element={<ProductDetail />} />
+                    <Route path="/cart" element={<Cart />} />
+                    <Route path="/wishlist" element={<Wishlist />} />
+                    <Route path="/checkout" element={<Checkout />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/orders" element={<Orders />} />
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/blogs" element={<Blogs />} />
+                    <Route path="/blog/:id" element={<BlogDetail />} />
+                    <Route path="/new-arrivals" element={<NewArrivals />} />
+                    <Route path="/bulk-orders" element={<BulkOrders />} />
+                    <Route path="/custom-branding" element={<CustomBranding />} />
 
-                  {/* Admin Routes */}
-                  <Route path="/admin" element={<AdminDashboard />} />
-                  <Route path="/admin/products" element={<ProductManagement />} />
-                  <Route path="/admin/categories" element={<CategoryManagement />} />
-                  <Route path="/admin/offers" element={<OfferManagement />} />
-                  <Route path="/admin/blogs" element={<BlogManagement />} />
-                  <Route path="/admin/media" element={<MediaLibrary />} />
-                  <Route path="/admin/orders" element={<AdminOrders />} />
-                </Routes>
-              </Layout>
-              <ScrollToTop />
-            </Router>
-          </WishlistProvider>
-        </CartProvider>
-      </AuthProvider>
-    </ErrorBoundary>
+                    {/* Admin Routes */}
+                    <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="/admin/products" element={<ProductManagement />} />
+                    <Route path="/admin/categories" element={<CategoryManagement />} />
+                    <Route path="/admin/offers" element={<OfferManagement />} />
+                    <Route path="/admin/blogs" element={<BlogManagement />} />
+                    <Route path="/admin/media" element={<MediaLibrary />} />
+                    <Route path="/admin/orders" element={<AdminOrders />} />
+                  </Routes>
+                </Layout>
+                <ScrollToTop />
+              </Router>
+            </WishlistProvider>
+          </CartProvider>
+        </AuthProvider>
+      </ErrorBoundary>
+    </HelmetProvider>
   );
 }

@@ -26,6 +26,8 @@ export interface Product {
 export interface CartItem extends Product {
   quantity: number;
   isFreeGift?: boolean;
+  isSample?: boolean;
+  customPrice?: number;
 }
 export interface OrderItem {
   id: string;

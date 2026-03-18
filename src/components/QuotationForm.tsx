@@ -74,7 +74,7 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ isOpen, onClose, items, o
           message += `\n*Special Requirements:* ${formData.message}`;
         }
         
-        const whatsappUrl = `https://wa.me/919000000000?text=${encodeURIComponent(message)}`;
+        const whatsappUrl = `https://wa.me/917909096738?text=${encodeURIComponent(message)}`;
         
         // Use a short timeout to allow the 'Submitted' success UI to be seen for a moment
         setTimeout(() => {
@@ -225,7 +225,7 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ isOpen, onClose, items, o
                           value={formData.phone}
                           onChange={e => setFormData({...formData, phone: e.target.value})}
                           className="w-full bg-stone-50 border-2 border-transparent rounded-[1.25rem] py-5 pl-14 pr-6 text-sm focus:bg-white focus:border-emerald-500/30 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all"
-                          placeholder="+91 90000 00000"
+                          placeholder="+91 79090 96738"
                         />
                       </div>
                     </div>

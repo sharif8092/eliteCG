@@ -29,13 +29,13 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   <div className="w-8 h-8 rounded-full bg-stone-800 flex items-center justify-center group-hover:bg-emerald-800 transition-colors">
                     <Phone size={14} className="text-stone-400 group-hover:text-white" />
                   </div>
-                  <a href="tel:+919000000000" className="text-[10px] uppercase tracking-[0.2em] font-bold hover:text-white transition-colors">+91 90000 00000</a>
+                  <a href="tel:+917909096738" className="text-[10px] uppercase tracking-[0.2em] font-bold hover:text-white transition-colors">+91 79090 96738</a>
                 </div>
                 <div className="flex items-center gap-4 group">
                   <div className="w-8 h-8 rounded-full bg-stone-800 flex items-center justify-center group-hover:bg-green-800 transition-colors">
                     <MessageCircle size={14} className="text-stone-400 group-hover:text-white" />
                   </div>
-                  <a href="https://wa.me/919000000000" target="_blank" rel="noopener noreferrer" className="text-[10px] uppercase tracking-[0.2em] font-bold hover:text-white transition-colors">+91 90000 00000 (WhatsApp)</a>
+                  <a href="https://wa.me/917909096738" target="_blank" rel="noopener noreferrer" className="text-[10px] uppercase tracking-[0.2em] font-bold hover:text-white transition-colors">+91 79090 96738 (WhatsApp)</a>
                 </div>
                 <div className="flex items-center gap-4 group">
                   <div className="w-8 h-8 rounded-full bg-stone-800 flex items-center justify-center group-hover:bg-amber-800 transition-colors">
