@@ -13,6 +13,10 @@ const mapWooProductToInternal = (wooProduct: any): Product => {
             ? wooProduct.categories.map((c: any) => c.name)
             : ['Collection'],
         images: wooProduct.images.map((img: any) => img.src),
+        thumbnails: wooProduct.images.map((img: any) => {
+            // Check for specific WooCommerce sizes if available
+            return img.src; // Fallback to src
+        }),
         imageAlts: wooProduct.images.map((img: any) => img.alt || wooProduct.name),
         stock: wooProduct.stock_quantity || 0,
         featured: wooProduct.featured,
