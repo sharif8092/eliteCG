@@ -59,6 +59,7 @@ export interface BlogPost {
   comments: number;
   image?: string; // Main thumbnail
   imageAlt?: string; // SEO alt text for thumbnail
+  excerpt?: string; // Short summary
   heroImage?: string; // Larger banner image
   heroAlt?: string; // SEO alt text for hero
   additionalImages?: { url: string; alt?: string }[]; // Gallery with SEO

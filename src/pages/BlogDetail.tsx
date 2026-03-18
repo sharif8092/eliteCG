@@ -137,7 +137,7 @@ const BlogDetail: React.FC = () => {
                     </div>
 
                     <div
-                        className="prose prose-stone prose-lg md:prose-xl max-w-none prose-headings:font-serif prose-headings:font-normal prose-p:font-light prose-p:leading-relaxed prose-p:text-stone-600 prose-img:rounded-[2rem] first-letter:text-7xl first-letter:font-serif first-letter:mr-3 first-letter:float-left first-letter:text-emerald-800"
+                        className="prose prose-stone prose-lg md:prose-xl max-w-none prose-headings:font-serif prose-headings:font-normal prose-p:font-light prose-p:leading-relaxed prose-p:text-stone-600 prose-img:rounded-[2rem]"
                         dangerouslySetInnerHTML={{ __html: post.content }}
                     />
 

@@ -94,7 +94,7 @@ const Blogs: React.FC = () => {
 
                                     <div
                                         className="text-stone-500 font-light text-sm leading-relaxed mb-8 line-clamp-3"
-                                        dangerouslySetInnerHTML={{ __html: post.content }}
+                                        dangerouslySetInnerHTML={{ __html: post.excerpt || post.content }}
                                     />
 
                                     <div className="mt-auto pt-6 border-t border-stone-100">

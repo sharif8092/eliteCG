@@ -481,7 +481,7 @@ const Home: React.FC = () => {
               </h2>
               <div
                 className="text-stone-400 text-lg leading-relaxed font-light max-w-md line-clamp-4"
-                dangerouslySetInnerHTML={{ __html: latestPosts[0]?.content || "Ababil is more than a store. It is a sanctuary for those who seek beauty in the sacred, and meaning in the mundane. Every piece is selected for its soul." }}
+                dangerouslySetInnerHTML={{ __html: latestPosts[0]?.excerpt || latestPosts[0]?.content || "Ababil is more than a store. It is a sanctuary for those who seek beauty in the sacred, and meaning in the mundane. Every piece is selected for its soul." }}
               />
               <div className="pt-6">
                 <Link to={`/blog/${latestPosts[0]?.id}`} className="group flex items-center space-x-4 text-white hover:text-emerald-400 transition-colors">

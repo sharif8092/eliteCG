@@ -12,6 +12,7 @@ const mapWPPostToInternal = (post: any): BlogPost => {
         comments: 0, // WP handles this separately, keeping 0 for now
         image: post._embedded?.['wp:featuredmedia']?.[0]?.source_url || '',
         imageAlt: post._embedded?.['wp:featuredmedia']?.[0]?.alt_text || '',
+        excerpt: post.excerpt?.rendered || '',
         category: post._embedded?.['wp:term']?.[0]?.[0]?.name || 'Lifestyle'
     };
 };
