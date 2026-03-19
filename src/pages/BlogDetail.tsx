@@ -149,7 +149,7 @@ const BlogDetail: React.FC = () => {
                             <div className="text-center md:text-left">
                                 <span className="text-[10px] uppercase tracking-widest font-bold text-emerald-800 mb-2 block">Written by</span>
                                 <h4 className="text-xl font-serif text-stone-900 mb-2">{post.author}</h4>
-                                <p className="text-stone-500 text-sm font-light">Curator and storyteller at Ababil, exploring the intersection of modern lifestyle and traditional wisdom.</p>
+                                <p className="text-stone-500 text-sm font-light">Curator and storyteller at Urban Shark, exploring the intersection of modern lifestyle and professional excellence.</p>
                             </div>
                         </div>
                     </div>

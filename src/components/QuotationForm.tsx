@@ -61,7 +61,7 @@ const QuotationForm: React.FC<QuotationFormProps> = ({ isOpen, onClose, items, o
       
       if (isMobile) {
         // Generate detailed WhatsApp message for mobile
-        let message = `Hi Ababil Team,\n\nI just submitted a formal quotation request through the website. Here are my details:\n\n`;
+        let message = `Hi Urban Shark Team,\n\nI just submitted a formal quotation request through the website. Here are my details:\n\n`;
         message += `*Name:* ${formData.firstName} ${formData.lastName}\n`;
         message += `*Company:* ${formData.company}\n`;
         message += `*Phone:* ${formData.phone}\n`;

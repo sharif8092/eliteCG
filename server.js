@@ -129,6 +129,37 @@ app.post('/api/woo/orders', async (req, res) => {
     }
 });
 
+app.get('/api/woo/orders/:id/invoice', async (req, res) => {
+    try {
+        console.log(`Fetching PDF Invoice for Order #${req.params.id}`);
+        // The REST API endpoint for WooCommerce PDF Invoices & Packing Slips
+        // Note: This relies on the plugin's REST API being available.
+        const response = await wooClient.get(`/../../wpo/v1/pdf/invoice/${req.params.id}`, {
+            responseType: 'arraybuffer',
+            params: {
+                ...wooClient.defaults.params,
+                // Some versions might need extra params, but consumer_key/secret usually suffice
+            }
+        });
+
+        res.set({
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="invoice-${req.params.id}.pdf"`,
+            'Content-Length': response.data.length
+        });
+
+        res.send(response.data);
+    } catch (error) {
+        console.error(`Error fetching invoice for order ${req.params.id}:`, error.response?.data?.toString() || error.message);
+        
+        // Fallback or more detailed error
+        const status = error.response?.status || 500;
+        const errorMessage = error.response?.data?.toString() || 'Failed to generate PDF invoice. Please ensure the "WooCommerce PDF Invoices & Packing Slips" plugin is active and its REST API is accessible.';
+        
+        res.status(status).json({ error: 'Invoice Generation Failed', details: errorMessage });
+    }
+});
+
 // Generalized WordPress Proxy (for Blog components)
 const wpClient = axios.create({
     baseURL: `${WC_URL}/wp-json/wp/v2`,

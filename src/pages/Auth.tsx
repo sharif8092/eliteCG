@@ -130,7 +130,7 @@ const Auth: React.FC = () => {
             transition={{ duration: 1.2 }}
           >
             <span className="text-emerald-400 text-[10px] uppercase tracking-[0.5em] font-bold mb-8 block">Est. 2024</span>
-            <h2 className="text-7xl font-serif text-white mb-8 italic leading-tight">Ababil</h2>
+            <h2 className="text-7xl font-serif text-white mb-8 italic leading-tight">Urban Shark</h2>
             <p className="text-stone-400 font-light leading-relaxed tracking-wide text-sm uppercase">
               Curating timeless pieces for the <br /> modern spiritual journey.
             </p>

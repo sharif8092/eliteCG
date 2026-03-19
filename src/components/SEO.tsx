@@ -23,12 +23,12 @@ const SEO: React.FC<SEOProps> = ({
   ogDescription,
   ogImage,
   ogType = 'website',
-  twitterHandle = '@ababil_gifts',
+  twitterHandle = '@urbanshark_gifts',
   jsonLd
 }) => {
-  const siteName = 'Ababil — Premium Corporate Gifting';
+  const siteName = 'Urban Shark — Premium Corporate Gifting';
   const fullTitle = title ? `${title} | ${siteName}` : siteName;
-  const defaultDescription = 'Ababil offers premium corporate gifting solutions in India. Shop bespoke employee welcome kits, executive gifts, and custom branded merchandise.';
+  const defaultDescription = 'Urban Shark offers premium corporate gifting solutions in India. Shop bespoke employee welcome kits, executive gifts, and custom branded merchandise.';
   const metaDescription = description || defaultDescription;
   const url = canonical || window.location.href;
 

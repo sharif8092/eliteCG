@@ -197,5 +197,34 @@ export const orderService = {
         });
 
         return (response.data as any[]).map(mapWooOrderToInternal);
+    },
+
+    /**
+     * Download Invoice for an order
+     */
+    async downloadInvoice(orderId: string): Promise<void> {
+        try {
+            // @ts-ignore
+            const baseUrl = (import.meta as any).env?.VITE_API_URL || '';
+            const response = await fetch(`${baseUrl}/api/woo/orders/${orderId}/invoice`);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.details || 'Failed to download invoice');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `invoice-${orderId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error: any) {
+            console.error('Invoice Download Error:', error);
+            throw error;
+        }
     }
 };

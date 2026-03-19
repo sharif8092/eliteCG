@@ -35,9 +35,9 @@ const AdminSidebar: React.FC = () => {
 
     return (
         <aside className="w-64 bg-white border-r border-stone-200 h-screen sticky top-0 flex flex-col pt-6 pb-4">
-            <div className="px-6 mb-8 flex items-center gap-2">
-                <ShoppingBag className="text-emerald-600" size={24} />
-                <span className="text-xl font-serif italic font-bold text-stone-900">Ababil Admin</span>
+            <div className="px-6 mb-8 flex items-center gap-3">
+                <img src="/logo.png" alt="Urban Shark Logo" className="h-8 w-auto object-contain" />
+                <span className="text-xl font-serif italic font-bold text-stone-900">Urban Shark Admin</span>
             </div>
 
             <nav className="flex-1 px-3 space-y-1">

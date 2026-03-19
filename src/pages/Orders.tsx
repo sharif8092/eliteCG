@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Order } from '../types';
 import { orderService } from '../services/orderService';
-import { Package, Clock, ChevronRight, Truck, CheckCircle2, MapPin, XCircle, Undo2, Loader2, AlertCircle } from 'lucide-react';
+import { Package, Clock, ChevronRight, Truck, CheckCircle2, MapPin, XCircle, Undo2, Loader2, AlertCircle, FileText } from 'lucide-react';
 
 const Orders: React.FC = () => {
   const { user, profile } = useAuth();
@@ -54,6 +54,18 @@ const Orders: React.FC = () => {
     } catch (err) {
       console.error(`Error requesting ${action}:`, err);
       alert(`Error: Could not ${action} order. Please try again.`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDownloadInvoice = async (orderId: string) => {
+    setActionLoading(`invoice-${orderId}`);
+    try {
+      await orderService.downloadInvoice(orderId);
+    } catch (err: any) {
+      console.error('Error downloading invoice:', err);
+      alert(err.message || 'Could not download invoice. Please try again later.');
     } finally {
       setActionLoading(null);
     }
@@ -208,6 +220,15 @@ const Orders: React.FC = () => {
                         <span>Request Return</span>
                       </button>
                     )}
+
+                    <button
+                      onClick={() => handleDownloadInvoice(order.id)}
+                      disabled={actionLoading === `invoice-${order.id}`}
+                      className="flex items-center space-x-2 px-6 py-3 bg-emerald-50 text-emerald-700 rounded-full text-[10px] uppercase tracking-widest font-bold hover:bg-emerald-100 transition-all disabled:opacity-50"
+                    >
+                      {actionLoading === `invoice-${order.id}` ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
+                      <span>Download Invoice</span>
+                    </button>
 
                     {(order.status === 'processing' || order.status === 'shipped') && (
                       <div className="flex items-center space-x-2 px-6 py-3 bg-stone-50 text-stone-500 rounded-full text-[10px] uppercase tracking-widest font-bold cursor-default">

@@ -78,10 +78,10 @@ const Navbar: React.FC = () => {
           <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12">
             <div className="flex items-center justify-between h-16 lg:h-[80px] gap-4">
 
-              {/* Left: Logo */}
               <div className="flex-1 flex items-center">
-                <Link to="/" className="flex-shrink-0 group">
-                  <span className="text-2xl lg:text-[28px] font-serif italic text-stone-900 tracking-tight group-hover:text-emerald-800 transition-colors duration-300">Ababil</span>
+                <Link to="/" className="flex-shrink-0 group flex items-center gap-3">
+                  <img src="/logo.png" alt="Urban Shark Logo" className="h-8 lg:h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
+                  <span className="text-2xl lg:text-[28px] font-serif italic text-stone-900 tracking-tight group-hover:text-emerald-800 transition-colors duration-300">Urban Shark</span>
                 </Link>
               </div>
 

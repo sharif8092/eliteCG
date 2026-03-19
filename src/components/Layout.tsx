@@ -18,8 +18,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-16">
             <div className="md:col-span-4">
-              <Link to="/" className="inline-block group">
-                <span className="text-3xl font-serif italic text-white group-hover:text-emerald-400 transition-colors duration-300">Ababil</span>
+              <Link to="/" className="inline-block group flex items-center gap-3">
+                <img src="/logo.png" alt="Urban Shark Logo" className="h-10 w-auto object-contain brightness-0 invert opacity-80 group-hover:opacity-100 transition-all" />
+                <span className="text-3xl font-serif italic text-white group-hover:text-emerald-400 transition-colors duration-300">Urban Shark</span>
               </Link>
               <p className="mt-8 max-w-xs text-[11px] uppercase tracking-widest leading-loose font-bold">
                 Excellence in Corporate Gifting. Curating high-quality pieces that reflect timeless values and traditions.
@@ -77,7 +78,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </div>
           </div>
           <div className="mt-24 pt-8 border-t border-stone-800 flex flex-col md:flex-row justify-between items-center text-[9px] uppercase tracking-[0.3em] font-bold">
-            <p>&copy; {new Date().getFullYear()} Ababil Corporate. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} Urban Shark Corporate. All rights reserved.</p>
             <div className="flex space-x-8 mt-4 md:mt-0">
               <a href="/privacy" className="hover:text-white transition-colors">Privacy</a>
               <a href="/terms" className="hover:text-white transition-colors">Terms</a>

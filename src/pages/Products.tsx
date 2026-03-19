@@ -165,7 +165,7 @@ const Products: React.FC = () => {
     }
     return {
       title: "Browse Corporate Gift Collection",
-      description: "Explore Ababil's complete range of premium corporate gifts. From tech kits to executive hampers, find the ideal gifts for your professional network."
+      description: "Explore Urban Shark's complete range of premium corporate gifts. From tech kits to executive hampers, find the ideal gifts for your professional network."
     };
   }, [categoryFilter, searchQueryParam, filterParam]);
 

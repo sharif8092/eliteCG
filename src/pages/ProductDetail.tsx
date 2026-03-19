@@ -203,7 +203,7 @@ const ProductDetail: React.FC = () => {
       "description": (product.description || '').replace(/<[^>]*>?/gm, ''), // Strip HTML
       "brand": {
         "@type": "Brand",
-        "name": "Ababil"
+        "name": "Urban Shark"
       },
       "sku": product.id,
       "offers": {
