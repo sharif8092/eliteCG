@@ -41,7 +41,7 @@ const NewArrivals: React.FC = () => {
         <div className="absolute inset-0 opacity-40">
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-stone-900 z-10" />
           <img 
-            src="https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&q=80&w=2000" 
+            src="/Hero13.jpg" 
             alt="New Arrivals" 
             className="w-full h-full object-cover"
           />

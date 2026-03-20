@@ -63,7 +63,7 @@ const ForgotPassword: React.FC = () => {
             <div className="hidden lg:flex lg:w-1/2 bg-stone-900 relative overflow-hidden items-center justify-center p-24">
                 <div className="absolute inset-0 opacity-20">
                     <img 
-                        src="https://images.unsplash.com/photo-1590736704728-f4730bb30770?q=80&w=1200&auto=format&fit=crop" 
+                        src="/Hero2.jpg" 
                         className="w-full h-full object-cover grayscale" 
                         alt="Interior" 
                     />

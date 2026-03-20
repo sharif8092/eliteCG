@@ -204,8 +204,8 @@ export const MOCK_BLOGS = [
     status: 'Published' as const,
     comments: 12,
     category: 'Art & Culture',
-    image: 'https://images.unsplash.com/photo-1590073844006-33379778ae09?q=80&w=800&auto=format&fit=crop',
-    heroImage: 'https://images.unsplash.com/photo-1590073844006-33379778ae09?q=80&w=1200&auto=format&fit=crop',
+    image: '/Hero15.jpg',
+    heroImage: '/Hero15.jpg',
     seoTitle: 'Islamic Calligraphy: A Journey through History and Art',
     seoDescription: 'Discover the rich history and intricate beauty of Islamic calligraphy. From ancient scripts to modern masterpieces.',
     seoKeywords: ['islamic art', 'calligraphy', 'arabic script']
@@ -218,8 +218,8 @@ export const MOCK_BLOGS = [
     status: 'Published' as const,
     comments: 8,
     category: 'Fashion',
-    image: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?q=80&w=800&auto=format&fit=crop',
-    heroImage: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?q=80&w=1200&auto=format&fit=crop',
+    image: '/Hero16.jpg',
+    heroImage: '/Hero16.jpg',
     seoTitle: 'How to Choose the Perfect Abaya: A Style Guide',
     seoDescription: 'Looking for the perfect abaya? Follow our expert tips on fabric, fit, and style to find your next favorite piece.',
     seoKeywords: ['abaya style', 'modest fashion', 'hijab tips']

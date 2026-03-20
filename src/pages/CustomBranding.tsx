@@ -25,28 +25,28 @@ const CustomBranding: React.FC = () => {
       description: "The gold standard for vibrant, long-lasting colors on apparel and fabric. Ideal for bold logos and large-scale bulk orders.",
       icon: <Palette size={32} className="text-emerald-600" />,
       features: ["PMS Color Matching", "Durable Finish", "Great for Cotton"],
-      image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800"
+      image: "/Hero1.jpg"
     },
     {
       title: "Premium Embroidery",
       description: "Adds a textured, three-dimensional look to caps, polo shirts, and bags. Perfect for a high-end, classic professional feel.",
       icon: <Scissors size={32} className="text-stone-900" />,
       features: ["Precision Threading", "3D Puff Options", "Fade Resistant"],
-      image: "https://images.unsplash.com/photo-1574182215816-ae560dd4594e?auto=format&fit=crop&q=80&w=800"
+      image: "/Hero2.jpg"
     },
     {
       title: "Laser Engraving",
       description: "A permanent, precise etching technique for metal, wood, and leather. Delivers a sophisticated, understated luxury aesthetic.",
       icon: <Maximize size={32} className="text-emerald-700" />,
       features: ["Permanent Etching", "Micro-Detailing", "Metallic Finishes"],
-      image: "https://images.unsplash.com/photo-1590846406792-0adc7f938f1d?auto=format&fit=crop&q=80&w=800"
+      image: "/Hero3.jpg"
     },
     {
       title: "UV Digital Printing",
       description: "High-resolution full-color printing using UV-cured inks. Perfect for tech gifts, power banks, and flat hard surfaces.",
       icon: <Droplets size={32} className="text-stone-900" />,
       features: ["Full Color Gradient", "Quick Turnaround", "High Resolution"],
-      image: "https://images.unsplash.com/photo-1562648111-2eb2617f698b?auto=format&fit=crop&q=80&w=800"
+      image: "/Hero4.jpg"
     }
   ];
 

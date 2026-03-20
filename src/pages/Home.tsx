@@ -13,21 +13,21 @@ import { decodeHtml } from '../utils/formatUtils';
 
 const DEFAULT_HERO_SLIDES = [
   {
-    image: 'https://images.unsplash.com/photo-1549463591-147604d4c815?q=80&w=1920&auto=format&fit=crop&fm=webp', // Corporate Gift Boxes
+    image: '/Hero6.jpg', // Corporate Gift Boxes
     subtitle: 'Excellence in Corporate Gifting',
     title: 'Premium Business Gifts',
     desc: 'Thoughtfully curated luxury gift sets for your valued partners and employees.',
     link: '/products',
   },
   {
-    image: 'https://images.unsplash.com/photo-1513201099705-a9746e1e201f?q=80&w=1920&auto=format&fit=crop&fm=webp', // Wrapped gifts
+    image: '/Hero7.jpg', // Wrapped gifts
     subtitle: 'Custom Branding Available',
     title: 'Bespoke Curations',
     desc: 'Personalize every gift with your corporate identity for a lasting impression.',
     link: '/products',
   },
   {
-    image: 'https://images.unsplash.com/photo-1523293836414-f04e712e1f3b?q=80&w=1920&auto=format&fit=crop&fm=webp', // Elegant Desk/Gift
+    image: '/Hero8.jpg', // Elegant Desk/Gift
     subtitle: 'Bulk Orders Simplified',
     title: 'Seamless Logistics',
     desc: 'From curation to doorstep delivery, we handle your festive gifting at scale.',
@@ -118,7 +118,7 @@ const Home: React.FC = () => {
 
   const filteredProducts = useMemo(() => {
     if (selectedCategory === 'All') return products;
-    return products.filter(p => 
+    return products.filter(p =>
       p.categories.some(cat => cat.toLowerCase() === selectedCategory.toLowerCase())
     );
   }, [products, selectedCategory]);
@@ -361,10 +361,10 @@ const Home: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { label: 'Under ₹500', min: 0, max: 500, image: 'https://images.unsplash.com/photo-1549463591-147604d4c815?q=80&w=800&auto=format&fit=crop&fm=webp' },
-              { label: '₹500 - ₹1000', min: 500, max: 1000, image: 'https://images.unsplash.com/photo-1513201099705-a9746e1e201f?q=80&w=800&auto=format&fit=crop&fm=webp' },
-              { label: '₹1000 - ₹2000', min: 1000, max: 2000, image: 'https://images.unsplash.com/photo-1523293836414-f04e712e1f3b?q=80&w=800&auto=format&fit=crop&fm=webp' },
-              { label: 'Premium Gifts', min: 2000, max: 50000, image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop&fm=webp' },
+              { label: 'Under ₹500', min: 0, max: 500, image: '/Hero9.jpg' },
+              { label: '₹500 - ₹1000', min: 500, max: 1000, image: '/Hero10.jpg' },
+              { label: '₹1000 - ₹2000', min: 1000, max: 2000, image: '/Hero11.jpg' },
+              { label: 'Premium Gifts', min: 2000, max: 50000, image: '/Hero12.jpg' },
             ].map((budget, i) => (
               <Link
                 key={i}
@@ -425,7 +425,7 @@ const Home: React.FC = () => {
               className="relative aspect-square lg:aspect-[4/5] rounded-[2rem] overflow-hidden"
             >
               <img
-                src="https://images.unsplash.com/photo-1523293836414-f04e712e1f3b?q=80&w=1920&auto=format&fit=crop"
+                src="/Hero1.jpg"
                 alt="Corporate Gifting"
                 className="w-full h-full object-cover"
               />
@@ -510,7 +510,7 @@ const Home: React.FC = () => {
                 className="aspect-[4/5] rounded-[3rem] overflow-hidden"
               >
                 <img
-                  src={latestPosts[0]?.image || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1920&auto=format&fit=crop"}
+                  src={latestPosts[0]?.image || "/Hero14.jpg"}
                   alt={latestPosts[0]?.imageAlt || "Editorial Story"}
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
@@ -644,7 +644,7 @@ const Home: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
           <Link to="/products?category=Office" className="group relative aspect-[16/10] overflow-hidden rounded-[2rem] md:rounded-[3rem]">
             <img
-              src="https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?q=80&w=1920&auto=format&fit=crop"
+              src="/Hero2.jpg"
               alt="Executive Gifts"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
               referrerPolicy="no-referrer"
@@ -658,7 +658,7 @@ const Home: React.FC = () => {
 
           <Link to="/products?category=Hampers" className="group relative aspect-[16/10] overflow-hidden rounded-[2rem] md:rounded-[3rem]">
             <img
-              src="https://images.unsplash.com/photo-1549463591-147604d4c815?q=80&w=1920&auto=format&fit=crop"
+              src="/Hero3.jpg"
               alt="Premium Hampers"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
               referrerPolicy="no-referrer"

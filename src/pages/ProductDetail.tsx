@@ -291,7 +291,7 @@ const ProductDetail: React.FC = () => {
                 key={selectedImage}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                src={product?.images?.[selectedImage] || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=2040&auto=format&fit=crop'}
+                src={product?.images?.[selectedImage] || '/Hero16.jpg'}
                 alt={product?.name || 'Product'}
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"

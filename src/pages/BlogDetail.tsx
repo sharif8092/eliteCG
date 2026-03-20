@@ -74,7 +74,7 @@ const BlogDetail: React.FC = () => {
                     className="absolute inset-0"
                 >
                     <img
-                        src={post.image || "https://images.unsplash.com/photo-1512290923902-8a9f81fc210c?auto=format&fit=crop&q=80&w=1920"}
+                        src={post.image || "/Hero14.jpg"}
                         alt={post.imageAlt || post.title}
                         className="w-full h-full object-cover"
                     />

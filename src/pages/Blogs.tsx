@@ -65,7 +65,7 @@ const Blogs: React.FC = () => {
                             >
                                 <div className="relative aspect-[16/10] overflow-hidden">
                                     <img
-                                        src={post.image || 'https://images.unsplash.com/photo-1512290923902-8a9f81fc210c?auto=format&fit=crop&q=80&w=1000'}
+                                        src={post.image || '/Hero14.jpg'}
                                         alt={post.imageAlt || post.title}
                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
                                     />
