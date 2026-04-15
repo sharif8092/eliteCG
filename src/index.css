@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Cormorant Garamond", serif;
+  --font-display: "Playfair Display", serif;
+}
+
+@layer base {
+  body {
+    @apply bg-[#FCFAF7] text-stone-900;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+.glass-card {
+  @apply bg-white/40 backdrop-blur-xl border border-white/20;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* Product Description Styles (WooCommerce HTML) */
+.product-description {
+  @apply space-y-4;
+}
+
+.product-description p {
+  @apply mb-4 leading-relaxed;
+}
+
+.product-description img, 
+.product-description figure {
+  @apply max-w-full h-auto rounded-2xl my-6 mx-auto block;
+}
+
+.product-description figcaption {
+  @apply text-center text-[10px] uppercase tracking-widest text-stone-400 mt-2 font-bold;
+}
+
+.product-description ul, 
+.product-description ol {
+  @apply list-inside list-disc space-y-2 my-4;
+}
+
+.product-description a {
+  @apply text-emerald-800 underline underline-offset-4 decoration-emerald-800/30 hover:decoration-emerald-800 transition-all;
+}

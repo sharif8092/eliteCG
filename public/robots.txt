@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /wp-json/
+Disallow: /api/
+
+Sitemap: https://corporategifting.store/sitemap.xml

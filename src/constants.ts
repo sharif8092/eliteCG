@@ -1,0 +1,227 @@
+export const CATEGORIES = [
+  'Abaya',
+  'Kurta',
+  'Cap',
+  'Itter',
+  'Tasbih',
+  'Miswaq',
+  'Janamaz',
+  'Home Decor',
+  'Other'
+];
+
+export const MOCK_PRODUCTS = [
+  {
+    id: '1',
+    name: 'Premium Black Abaya',
+    description: 'Elegant black abaya with intricate embroidery. Crafted from high-quality Nida fabric, this abaya offers both comfort and style for special occasions.',
+    price: 4500,
+    originalPrice: 5500,
+    category: 'Abaya',
+    images: ['https://picsum.photos/seed/abaya1/600/800'],
+    stock: 10,
+    featured: true,
+    rating: 4.8,
+    reviewCount: 124
+  },
+  {
+    id: '2',
+    name: 'White Cotton Kurta',
+    description: 'Comfortable white cotton kurta for daily wear. Breathable fabric and classic design make it a perfect choice for any season.',
+    price: 1800,
+    category: 'Kurta',
+    images: ['https://picsum.photos/seed/kurta1/600/800'],
+    stock: 25,
+    featured: true,
+    rating: 4.5,
+    reviewCount: 89
+  },
+  {
+    id: '3',
+    name: 'Oudh Al Arab Itter',
+    description: 'Long-lasting traditional Arabic fragrance. A rich blend of agarwood and oriental spices that lingers for hours.',
+    price: 1200,
+    originalPrice: 1500,
+    category: 'Itter',
+    images: ['https://picsum.photos/seed/itter1/600/800'],
+    stock: 50,
+    featured: true,
+    rating: 4.9,
+    reviewCount: 210
+  },
+  {
+    id: '4',
+    name: 'Velvet Janamaz',
+    description: 'Soft velvet prayer mat with traditional patterns. Provides excellent cushioning and comfort during prayer.',
+    price: 2500,
+    category: 'Janamaz',
+    images: ['https://picsum.photos/seed/janamaz1/600/800'],
+    stock: 15,
+    featured: false,
+    rating: 4.7,
+    reviewCount: 56
+  },
+  {
+    id: '5',
+    name: 'Silk Hijab Collection',
+    description: 'Luxurious silk hijabs in various colors. Soft to touch and elegant for formal wear.',
+    price: 950,
+    category: 'Other',
+    images: ['https://picsum.photos/seed/hijab1/600/800'],
+    stock: 40,
+    featured: true,
+    rating: 4.6,
+    reviewCount: 78
+  },
+  {
+    id: '6',
+    name: 'Handcrafted Tasbih',
+    description: 'Beautifully handcrafted prayer beads made from natural sandalwood.',
+    price: 650,
+    category: 'Tasbih',
+    images: ['https://picsum.photos/seed/tasbih1/600/800'],
+    stock: 100,
+    featured: false,
+    rating: 4.8,
+    reviewCount: 145
+  },
+  {
+    id: '7',
+    name: 'Modern Islamic Wall Art',
+    description: 'Elegant Arabic calligraphy wall art for your home decor.',
+    price: 3200,
+    category: 'Home Decor',
+    images: ['https://picsum.photos/seed/decor1/600/800'],
+    stock: 8,
+    featured: true,
+    rating: 4.9,
+    reviewCount: 34
+  },
+  {
+    id: '8',
+    name: 'Premium Miswaq Set',
+    description: 'Natural toothbrush sticks sourced from the Salvadora persica tree.',
+    price: 350,
+    category: 'Miswaq',
+    images: ['https://picsum.photos/seed/miswaq1/600/800'],
+    stock: 200,
+    featured: false,
+    rating: 4.4,
+    reviewCount: 92
+  },
+  {
+    id: '9',
+    name: 'Embroidered Prayer Cap',
+    description: 'Fine quality cotton prayer cap with intricate white embroidery.',
+    price: 450,
+    category: 'Cap',
+    images: ['https://picsum.photos/seed/cap1/600/800'],
+    stock: 60,
+    featured: false,
+    rating: 4.3,
+    reviewCount: 45
+  },
+  {
+    id: '10',
+    name: 'Royal Blue Kaftan',
+    description: 'Stunning royal blue kaftan with gold thread work. Perfect for festive occasions.',
+    price: 5500,
+    category: 'Abaya',
+    images: ['https://picsum.photos/seed/kaftan1/600/800'],
+    stock: 5,
+    featured: true,
+    rating: 4.9,
+    reviewCount: 28
+  },
+  {
+    id: '11',
+    name: 'Rose & Musk Itter',
+    description: 'A delicate floral fragrance with a warm musk base.',
+    price: 1100,
+    category: 'Itter',
+    images: ['https://picsum.photos/seed/itter2/600/800'],
+    stock: 45,
+    featured: false,
+    rating: 4.5,
+    reviewCount: 67
+  },
+  {
+    id: '12',
+    name: 'Linen Kurta Set',
+    description: 'Breathable linen kurta set with matching trousers.',
+    price: 2800,
+    category: 'Kurta',
+    images: ['https://picsum.photos/seed/kurta2/600/800'],
+    stock: 18,
+    featured: false,
+    rating: 4.6,
+    reviewCount: 52
+  },
+  {
+    id: '13',
+    name: 'Travel Prayer Mat',
+    description: 'Lightweight and foldable prayer mat for travelers.',
+    price: 850,
+    category: 'Janamaz',
+    images: ['https://picsum.photos/seed/janamaz2/600/800'],
+    stock: 35,
+    featured: false,
+    rating: 4.4,
+    reviewCount: 81
+  },
+  {
+    id: '14',
+    name: 'Crystal Tasbih',
+    description: 'Elegant crystal prayer beads that catch the light beautifully.',
+    price: 1250,
+    category: 'Tasbih',
+    images: ['https://picsum.photos/seed/tasbih2/600/800'],
+    stock: 25,
+    featured: false,
+    rating: 4.7,
+    reviewCount: 39
+  },
+  {
+    id: '15',
+    name: 'Islamic Calligraphy Lamp',
+    description: 'Ambient lamp featuring laser-cut Arabic calligraphy.',
+    price: 2400,
+    category: 'Home Decor',
+    images: ['https://picsum.photos/seed/lamp1/600/800'],
+    stock: 12,
+    featured: true,
+    rating: 4.8,
+    reviewCount: 22
+  }
+];
+
+export const MOCK_BLOGS = [
+  {
+    title: 'The Beauty of Islamic Calligraphy',
+    content: 'Islamic calligraphy is the artistic practice of handwriting and calligraphy, based upon the alphabet in the lands sharing a common Islamic cultural heritage. It includes Arabic, Ottoman, and Persian calligraphy.',
+    author: 'Amina Khan',
+    date: '2026-03-01',
+    status: 'Published' as const,
+    comments: 12,
+    category: 'Art & Culture',
+    image: '/Hero15.jpg',
+    heroImage: '/Hero15.jpg',
+    seoTitle: 'Islamic Calligraphy: A Journey through History and Art',
+    seoDescription: 'Discover the rich history and intricate beauty of Islamic calligraphy. From ancient scripts to modern masterpieces.',
+    seoKeywords: ['islamic art', 'calligraphy', 'arabic script']
+  },
+  {
+    title: '5 Tips for Choosing the Perfect Abaya',
+    content: 'Choosing the right abaya can be a daunting task with so many styles and fabrics available. Here are five tips to help you find the perfect one for any occasion.',
+    author: 'Zainab Ahmed',
+    date: '2026-03-05',
+    status: 'Published' as const,
+    comments: 8,
+    category: 'Fashion',
+    image: '/Hero16.jpg',
+    heroImage: '/Hero16.jpg',
+    seoTitle: 'How to Choose the Perfect Abaya: A Style Guide',
+    seoDescription: 'Looking for the perfect abaya? Follow our expert tips on fabric, fit, and style to find your next favorite piece.',
+    seoKeywords: ['abaya style', 'modest fashion', 'hijab tips']
+  }
+];
