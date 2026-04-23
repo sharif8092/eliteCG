@@ -4,21 +4,59 @@ import cors from 'cors';
 import axios from 'axios';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
+import db from './server/db.js';
+import crypto from 'crypto';
+import https from 'https';
 
 dotenv.config();
+console.log('[CORE] .env loaded');
+console.log('[CORE] WC_URL exists:', !!process.env.WC_URL);
+console.log('[CORE] WC_KEY exists:', !!process.env.WC_CONSUMER_KEY);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const app = express();
-const PORT = process.env.PORT || 8080;
+// Ensure WooCommerce URL is clean
+const getCleanUrl = (url) => url ? url.replace(/\/$/, '') : '';
+const CLEAN_WC_URL = getCleanUrl(process.env.WC_URL);
+const CONSUMER_KEY = process.env.WC_CONSUMER_KEY;
+const CONSUMER_SECRET = process.env.WC_CONSUMER_SECRET;
 
-app.use(cors());
+console.log('[INIT] WooCommerce URL:', CLEAN_WC_URL);
+if (!CONSUMER_KEY || !CONSUMER_SECRET) {
+    console.warn('[INIT] WARNING: Missing WooCommerce credentials in .env');
+}
+
+const app = express();
+const PORT = process.env.PORT || 8081; // Switched to 8081 for testing
+
+// Proper CORS Configuration
+const allowedOrigins = [
+    'https://corporategifting.store',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
+];
+
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-cart-id']
+}));
+
 app.use(express.json());
 
 // simple cache for ISR (60 seconds)
 const wpCache = new Map();
 const CACHE_TTL = 60 * 1000;
+
 
 // Internal Linking Strategy - Utility for SEO
 const INTERNAL_LINKS = [
@@ -49,10 +87,7 @@ function injectInternalLinks(content) {
     return paragraphs.join('</p>');
 }
 
-// WooCommerce API Credentials
-const WC_URL = process.env.WC_URL;
-const CONSUMER_KEY = process.env.WC_CONSUMER_KEY;
-const CONSUMER_SECRET = process.env.WC_CONSUMER_SECRET;
+// Credentials already validated and cleaned above
 
 // Global Business Logic / Configuration
 const GLOBAL_CONFIG = {
@@ -77,8 +112,8 @@ const GLOBAL_CONFIG = {
 
 // Middleware to check for credentials
 const checkCredentials = (req, res, next) => {
-    if (!WC_URL || !CONSUMER_KEY || !CONSUMER_SECRET) {
-        console.error('CRITICAL: Missing WooCommerce Environment Variables!');
+    if (!CLEAN_WC_URL || !CONSUMER_KEY || !CONSUMER_SECRET) {
+        console.error('[AUTH] CRITICAL: Missing WooCommerce Environment Variables!');
         return res.status(400).json({
             error: 'Backend Configuration Error',
             details: 'One or more environment variables (WC_URL, WC_CONSUMER_KEY, WC_CONSUMER_SECRET) are missing on the server.'
@@ -87,104 +122,319 @@ const checkCredentials = (req, res, next) => {
     next();
 };
 
-app.use('/api/woo', checkCredentials);
+app.use('/api', checkCredentials);
 
 // Proxy Endpoints
 const wooClient = axios.create({
-    baseURL: `${WC_URL}/wp-json/wc/v3`,
-    params: {
-        consumer_key: CONSUMER_KEY,
-        consumer_secret: CONSUMER_SECRET,
+    baseURL: `https://${CONSUMER_KEY}:${CONSUMER_SECRET}@backend.corporategifting.store/wp-json/wc/v3`,
+    headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json'
     },
+    timeout: 30000 
+});
+
+const wpClient = axios.create({
+    baseURL: `${CLEAN_WC_URL}/wp-json/wp/v2`,
+    headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
 });
 
 // WooCommerce Proxy Endpoints
-app.get('/api/woo/products', async (req, res) => {
-    try {
-        const response = await wooClient.get('/products', { params: req.query });
-        res.json(response.data);
-    } catch (error) {
-        console.error('WooCommerce API Error (Products):', {
-            url: `${WC_URL}/wp-json/wc/v3/products`,
-            status: error.response?.status,
-            data: error.response?.data,
-            message: error.message
+// SECURE PROXY ROUTES (No keys exposed to frontend)
+// RESILIENCE ROUTE: If frontend accidentally calls /api/woo/wp/*
+// This redirects it to the correct /api/wp/* handler
+app.all('/api/woo/wp/*', (req, res) => {
+    const correctUrl = req.url.replace('/api/woo/wp/', '/api/wp/');
+    console.log(`[RESILIENCE] Correcting malformed API path: ${req.url} -> ${correctUrl}`);
+    res.redirect(307, correctUrl);
+});
+
+// GERNALIZED WOOCOMMERCE PROXY using Native HTTPS (to bypass library-specific firewall blocks)
+app.all('/api/woo/*', (req, res) => {
+    const subPath = req.params[0];
+    const method = req.method;
+    
+    console.log(`[PROXY-WOO-NATIVE] ${method} /api/woo/${subPath}`);
+    
+    // Construct Query String including credentials
+    const queryParams = new URLSearchParams(req.query);
+    queryParams.append('consumer_key', CONSUMER_KEY);
+    queryParams.append('consumer_secret', CONSUMER_SECRET);
+    
+    const targetUrl = `https://backend.corporategifting.store/wp-json/wc/v3/${subPath}?${queryParams.toString()}`;
+    
+    const options = {
+        method: method,
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json'
+        }
+    };
+
+    const proxyReq = https.request(targetUrl, options, (proxyRes) => {
+        let body = '';
+        proxyRes.on('data', chunk => body += chunk);
+        proxyRes.on('end', () => {
+            try {
+                // If it's HTML, we still send it but it will be obvious in logs
+                if (body.trim().startsWith('<!DOCTYPE')) {
+                    console.error(`[PROXY-WOO-NATIVE ERROR] Received HTML instead of JSON for ${subPath}`);
+                    return res.status(proxyRes.statusCode || 403).json({
+                        error: 'WooCommerce returned HTML (Access Blocked)',
+                        details: body
+                    });
+                }
+
+                // Strip transfer-encoding for proxy consistency
+                const responseHeaders = { ...proxyRes.headers };
+                delete responseHeaders['transfer-encoding'];
+                delete responseHeaders['content-encoding']; // Avoid double compression issues
+
+                res.status(proxyRes.statusCode).set(responseHeaders).send(body);
+            } catch (e) {
+                res.status(500).json({ error: 'Proxy response parsing failed' });
+            }
         });
-        res.status(error.response?.status || 500).json(error.response?.data || {
-            error: 'Failed to fetch products',
-            hint: `Check if WC_URL (${WC_URL}) is reachable and API keys are valid.`
+    });
+
+    proxyReq.on('error', (e) => {
+        console.error(`[PROXY-WOO-NATIVE CRITICAL]:`, e.message);
+        res.status(500).json({ error: 'Proxy request failed', message: e.message });
+    });
+
+    if (req.body && Object.keys(req.body).length > 0) {
+        proxyReq.write(JSON.stringify(req.body));
+    }
+    proxyReq.end();
+});
+
+// GERNALIZED WORDPRESS PROXY
+app.all('/api/wp/*', async (req, res) => {
+    const subPath = req.params[0];
+    const method = req.method.toLowerCase();
+    
+    console.log(`[PROXY-WP] ${req.method} /api/wp/${subPath}`);
+    
+    try {
+        // NOTE: WP v2 API doesn't always need auth for GETs
+        const config = {
+            method,
+            url: `/${subPath}`,
+            params: req.query,
+            data: req.body
+        };
+        const response = await wpClient.request(config);
+        res.json(response.data);
+    } catch (error) {
+        console.error(`[PROXY-WP ERROR] ${subPath}:`, error.response?.data || error.message);
+        res.status(error.response?.status || 500).json({
+            error: 'WordPress Proxy Error',
+            details: error.response?.data || error.message
         });
     }
 });
 
-app.get('/api/woo/products/:id', async (req, res) => {
+app.get('/api/test', (req, res) => {
+    console.log('[ROUTE] GET /api/test hit');
+    res.json({ success: true, message: 'Server is responding correctly' });
+});
+
+app.get('/api/test-woo', async (req, res) => {
     try {
-        const response = await wooClient.get(`/products/${req.params.id}`, { params: req.query });
+        console.log('[API] Running WooCommerce Test Connection...');
+        const response = await wooClient.get('/'); // Basic API root check
+        res.json({
+            status: 'success',
+            message: 'Successfully connected to WooCommerce API',
+            data: response.data
+        });
+    } catch (error) {
+        console.error("FULL ERROR (TestWoo):", error.response?.data, error.message, error.stack);
+        res.status(error.response?.status || 500).json({
+            status: 'error',
+            message: 'Failed to connect to WooCommerce',
+            details: error.response?.data || error.message
+        });
+    }
+});
+
+app.get('/api/products/:id', async (req, res) => {
+    try {
+        const response = await wooClient.get(`/products/${req.params.id}`);
         res.json(response.data);
     } catch (error) {
-        console.error(`WooCommerce API Error (Product ${req.params.id}):`, error.response?.data || error.message);
-        res.status(error.response?.status || 500).json(error.response?.data || { error: 'Failed to fetch product' });
+        res.status(error.response?.status || 500).json({ error: 'Failed to fetch product' });
     }
 });
 
-app.get('/api/woo/products/categories', async (req, res) => {
+// CART SYSTEM IMPLEMENTATION (SQLite backed)
+const getCart = (id) => {
+    const cart = db.prepare('SELECT * FROM carts WHERE id = ?').get(id);
+    if (!cart) return null;
+    const items = db.prepare('SELECT * FROM cart_items WHERE cart_id = ?').all(id);
+    return { ...cart, items: items.map(item => ({ ...item, metadata: JSON.parse(item.metadata || '{}') })) };
+};
+
+app.get('/api/cart', (req, res) => {
+    console.log('[ROUTE] GET /api/cart hit');
     try {
-        const response = await wooClient.get('/products/categories', { params: req.query });
-        res.json(response.data);
+        if (!db) {
+            console.error('[DB] Database is missing during GET /api/cart');
+            return res.json({ items: [] });
+        }
+
+        const cartId = req.headers['x-cart-id'];
+        const userId = req.query.userId;
+
+        if (!cartId && !userId) {
+            return res.json({ items: [] });
+        }
+
+        let cart = userId ? db.prepare('SELECT * FROM carts WHERE user_id = ?').get(userId) : getCart(cartId);
+        
+        if (!cart && cartId) {
+            db.prepare('INSERT INTO carts (id) VALUES (?)').run(cartId);
+            cart = { id: cartId, items: [] };
+        }
+
+        res.json(cart || { items: [] });
     } catch (error) {
-        console.error('WooCommerce API Error (Categories):', error.response?.data || error.message);
-        res.status(error.response?.status || 500).json(error.response?.data || { error: 'Failed to fetch categories' });
+        console.error('[CART ERROR] GET /api/cart:', error.message);
+        res.json({ items: [], error: 'Cart sync failed, using fallback' });
     }
 });
 
-// Config Endpoint for Frontend
-app.get('/api/woo/config', (req, res) => {
-    res.json(GLOBAL_CONFIG);
-});
+app.post('/api/cart', (req, res) => {
+    let cartId = req.headers['x-cart-id'];
+    const { productId, quantity, branding, isSample, userId, price } = req.body;
 
-app.get('/api/woo/coupons', async (req, res) => {
     try {
-        const response = await wooClient.get('/coupons', { params: req.query });
-        res.json(response.data);
+        if (!db) throw new Error('Database not initialized');
+        
+        console.log('[API] POST /api/cart', { productId, quantity });
+        
+        // Use cartId if provided, otherwise generate one
+        if (!cartId) {
+            cartId = crypto.randomUUID();
+        }
+
+        // Ensure cart exists
+        const existingCart = db.prepare('SELECT * FROM carts WHERE id = ? OR (user_id = ? AND user_id IS NOT NULL)').get(cartId, userId);
+        if (!existingCart) {
+            db.prepare('INSERT INTO carts (id, user_id) VALUES (?, ?)').run(cartId, userId || null);
+        } else {
+            cartId = existingCart.id;
+        }
+
+        // Check if item exists in cart
+        const existingItem = db.prepare('SELECT * FROM cart_items WHERE cart_id = ? AND product_id = ? AND branding = ? AND is_sample = ?')
+            .get(cartId, productId.toString(), branding || 'None', isSample ? 1 : 0);
+
+        if (existingItem) {
+            if (quantity <= 0) {
+                db.prepare('DELETE FROM cart_items WHERE id = ?').run(existingItem.id);
+            } else {
+                db.prepare('UPDATE cart_items SET quantity = ?, price = ? WHERE id = ?')
+                    .run(quantity, price, existingItem.id);
+            }
+        } else if (quantity > 0) {
+            db.prepare('INSERT INTO cart_items (cart_id, product_id, quantity, branding, is_sample, price, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)')
+                .run(cartId, productId.toString(), quantity, branding || 'None', isSample ? 1 : 0, price, JSON.stringify({}));
+        }
+
+        res.json({ success: true, cartId, cart: getCart(cartId) });
     } catch (error) {
-        console.error('WooCommerce API Error (Coupons):', error.response?.data || error.message);
-        res.status(error.response?.status || 500).json(error.response?.data || { error: 'Failed to fetch coupons' });
+        console.error("FULL ERROR (Post-Cart):", error.message, error.stack);
+        res.status(500).json({ error: 'Database Operation Failed', details: error.message });
     }
 });
 
-app.post('/api/woo/orders', async (req, res) => {
+// CHECKOUT VALIDATION & ORDER CREATION
+app.post('/api/checkout', async (req, res) => {
+    const { cartId, userId, billing, shipping, payment_method } = req.body;
+    
     try {
-        const response = await wooClient.post('/orders', req.body);
-        res.status(201).json(response.data);
+        const cart = userId ? db.prepare('SELECT * FROM carts WHERE user_id = ?').get(userId) : getCart(cartId);
+        if (!cart || !cart.items || cart.items.length === 0) {
+            return res.status(400).json({ error: 'Cart is empty' });
+        }
+
+        // 1. RE-VALIDATE WITH WOOCOMMERCE (Price & Stock)
+        const line_items = [];
+        let total = 0;
+
+        for (const item of cart.items) {
+            const wcProduct = (await wooClient.get(`/products/${item.product_id}`)).data;
+            
+            // Check stock
+            if (wcProduct.manage_stock && wcProduct.stock_quantity < item.quantity) {
+                return res.status(400).json({ error: `Not enough stock for ${wcProduct.name}` });
+            }
+
+            // Recalculate price (Apply backend business logic for bulk etc.)
+            const basePrice = parseFloat(wcProduct.price);
+            let finalPrice = basePrice;
+            
+            // Apply tiered discounts if applicable (mimicking GLOBAL_CONFIG)
+            if (!item.is_sample) {
+                if (item.quantity >= 500) finalPrice *= 0.75;
+                else if (item.quantity >= 100) finalPrice *= 0.8;
+                else if (item.quantity >= 50) finalPrice *= 0.85;
+                else if (item.quantity >= 25) finalPrice *= 0.9;
+            } else {
+                finalPrice = basePrice * 3; // Sample price logic
+            }
+
+            line_items.push({
+                product_id: item.product_id,
+                quantity: item.quantity,
+                subtotal: (finalPrice * item.quantity).toString(),
+                total: (finalPrice * item.quantity).toString(),
+                meta_data: [
+                    { key: 'Branding', value: item.branding },
+                    { key: 'Type', value: item.is_sample ? 'Sample' : 'Bulk' }
+                ]
+            });
+            total += finalPrice * item.quantity;
+        }
+
+        // 2. CREATE WOOCOMMERCE ORDER
+        const orderData = {
+            payment_method,
+            billing,
+            shipping,
+            line_items,
+            customer_id: userId || 0,
+            status: 'pending'
+        };
+
+        const response = await wooClient.post('/orders', orderData);
+
+        // 3. CLEAR CART ON SUCCESS
+        db.prepare('DELETE FROM cart_items WHERE cart_id = ?').run(cart.id);
+
+        res.status(201).json({ 
+            success: true, 
+            order: response.data,
+            message: 'Order created successfully after backend validation' 
+        });
+
     } catch (error) {
-        console.error('WooCommerce API Error (Orders):', error.response?.data || error.message);
-        res.status(error.response?.status || 500).json(error.response?.data || { error: 'Failed to create order' });
+        console.error('Checkout Error:', error.response?.data || error.message);
+        res.status(error.response?.status || 500).json({
+            error: 'Checkout failed',
+            details: error.response?.data?.message || error.message
+        });
     }
 });
 
-// GET customers (for searching existing ones)
-app.get('/api/woo/customers', async (req, res) => {
-    try {
-        const response = await wooClient.get('/customers', { params: req.query });
-        res.json(response.data);
-    } catch (error) {
-        console.error('WooCommerce API Error (Customers GET):', error.response?.data || error.message);
-        res.status(error.response?.status || 500).json(error.response?.data || { error: 'Failed to fetch customer' });
-    }
-});
 
-app.post('/api/woo/customers', async (req, res) => {
-    try {
-        const response = await wooClient.post('/customers', req.body);
-        res.status(201).json(response.data);
-    } catch (error) {
-        console.error('WooCommerce API Error (Customers):', error.response?.data || error.message);
-        res.status(error.response?.status || 500).json(error.response?.data || { error: 'Failed to create customer' });
-    }
-});
+// END OF API PROXY ROUTES
 
 
-app.get('/api/woo/orders/:id/invoice', async (req, res) => {
+app.get('/api/orders/:id/invoice', async (req, res) => {
     try {
         console.log(`Fetching PDF Invoice for Order #${req.params.id}`);
         // The REST API endpoint for WooCommerce PDF Invoices & Packing Slips
@@ -215,37 +465,10 @@ app.get('/api/woo/orders/:id/invoice', async (req, res) => {
     }
 });
 
-// Generalized WordPress Proxy (for Blog components)
-const wpClient = axios.create({
-    baseURL: `${WC_URL}/wp-json/wp/v2`,
-});
-
-app.get('/api/woo/wp/*', async (req, res) => {
-    const subPath = req.params[0];
-    console.log(`Fetching WP data: /wp-json/wp/v2/${subPath}`);
-    try {
-        const response = await wpClient.get(`/${subPath}`, { params: req.query });
-        res.json(response.data);
-    } catch (error) {
-        console.error(`WordPress API Error (GET ${subPath}):`, error.response?.data || error.message);
-        res.status(error.response?.status || 500).json(error.response?.data || { error: 'Failed to fetch WP data' });
-    }
-});
-
-app.post('/api/woo/wp/*', async (req, res) => {
-    const subPath = req.params[0];
-    console.log(`Posting WP data: /wp-json/wp/v2/${subPath}`);
-    try {
-        const response = await wpClient.post(`/${subPath}`, req.body, { params: req.query });
-        res.json(response.data);
-    } catch (error) {
-        console.error(`WordPress API Error (POST ${subPath}):`, error.response?.data || error.message);
-        res.status(error.response?.status || 500).json(error.response?.data || { error: 'Failed to post WP data' });
-    }
-});
+// END OF API PROXY ROUTES
 
 // WordPress Password Reset Proxy
-app.post('/api/woo/wp/users/lost-password', async (req, res) => {
+app.post('/api/wp/users/lost-password', async (req, res) => {
     try {
         const response = await wpClient.post('/users/lost-password', req.body);
         res.json(response.data);
@@ -255,7 +478,7 @@ app.post('/api/woo/wp/users/lost-password', async (req, res) => {
     }
 });
 
-app.post('/api/woo/wp/users/reset-password', async (req, res) => {
+app.post('/api/wp/users/reset-password', async (req, res) => {
     try {
         const response = await wpClient.post('/users/reset-password', req.body);
         res.json(response.data);
@@ -266,7 +489,7 @@ app.post('/api/woo/wp/users/reset-password', async (req, res) => {
 });
 
 // JWT Auth Proxy (Special case outside /wp/v2)
-app.post('/api/woo/jwt-auth/*', async (req, res) => {
+app.post('/api/jwt-auth/*', async (req, res) => {
     const subPath = req.params[0];
     try {
         const response = await axios.post(`${WC_URL}/wp-json/jwt-auth/${subPath}`, req.body);
@@ -543,6 +766,8 @@ app.get('/blog', async (req, res) => {
             posts = response.data;
             wpCache.set('blog_list_ssr', { data: posts, timestamp: Date.now() });
         }
+
+        const listHtml = posts.map(p => `
             <div style="margin-bottom: 60px; border-bottom: 1px solid #f3f4f6; padding-bottom: 40px;">
                 <h2 style="font-family: serif; font-size: 2.5rem; margin-bottom: 15px;">
                     <a href="/blog/${p.slug}" style="color: #111827; text-decoration: none;">${p.title.rendered}</a>
@@ -582,11 +807,32 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'Giftify production server is running' });
 });
 
-// Fallback to index.html for SPA routing
+// API Not Found Handler (Strictly for /api/*)
+app.all('/api/*', (req, res) => {
+    console.log(`[404] API Route Not Found: ${req.method} ${req.url}`);
+    res.status(404).json({
+        error: 'API Endpoint Not Found',
+        path: req.url,
+        method: req.method
+    });
+});
+
+// Front-end SPA routing
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    res.sendFile(path.resolve(__dirname, 'index.html'));
+});
+
+// Global Error Handler Middleware
+app.use((err, req, res, next) => {
+    console.error('[GLOBAL ERROR]:', err.message, err.stack);
+    res.status(500).json({
+        error: 'General Server Error',
+        message: err.message
+    });
 });
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`[CORE] Giftify Server is running on port ${PORT}`);
+    console.log(`[CORE] Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`[CORE] Database Status: ${db ? 'READY' : 'FAILED'}`);
 });

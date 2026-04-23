@@ -70,8 +70,12 @@ export const orderService = {
      * Create a new order
      */
     async createOrder(orderData: any): Promise<Order> {
-        const response = await wooCommerceService.post('/orders', orderData);
-        return mapWooOrderToInternal(response.data);
+        const cartId = localStorage.getItem('cartId');
+        const response = await wooCommerceService.post('/checkout', {
+            ...orderData,
+            cartId
+        });
+        return mapWooOrderToInternal(response.data.order);
     },
 
     /**
@@ -206,7 +210,7 @@ export const orderService = {
         try {
             // @ts-ignore
             const baseUrl = (import.meta as any).env?.VITE_API_URL || '';
-            const response = await fetch(`${baseUrl}/api/woo/orders/${orderId}/invoice`);
+            const response = await fetch(`${baseUrl}/api/orders/${orderId}/invoice`);
             
             if (!response.ok) {
                 const errorData = await response.json();

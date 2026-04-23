@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { Product, CartItem } from '../types';
-import { MOCK_PRODUCTS } from '../constants';
 import { useAuth } from './AuthContext';
+import wooCommerceService from '../services/wooCommerceService';
 
 const GST_RATES: Record<string, number> = {
   'Abaya': 0.12,
@@ -17,14 +17,15 @@ const GST_RATES: Record<string, number> = {
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Product, quantity: number, branding?: string, isSample?: boolean, customPrice?: number) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  addToCart: (product: Product, quantity: number, branding?: string, isSample?: boolean, customPrice?: number) => Promise<void>;
+  removeFromCart: (productId: string) => Promise<void>;
+  updateQuantity: (productId: string, quantity: number) => Promise<void>;
   clearCart: () => void;
   subtotal: number;
   gstTotal: number;
-  total: number; // For compatibility, this will be the estimate total (subtotal + gstTotal)
+  total: number;
   itemCount: number;
+  isLoading: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -32,33 +33,40 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
-  const isInitialLoad = useRef(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const cartIdRef = useRef<string | null>(localStorage.getItem('cartId'));
 
-  // Load cart when user changes
+  // Initialize Cart ID
   useEffect(() => {
-    const cartKey = user ? `cart_${user.uid}` : 'cart_guest';
-    const saved = localStorage.getItem(cartKey);
-    const loadedItems = saved ? JSON.parse(saved) : [];
-    
-    if (user && loadedItems.length === 0) {
-      const guestSaved = localStorage.getItem('cart_guest');
-      if (guestSaved) {
-        setItems(JSON.parse(guestSaved));
-        return;
-      }
+    if (!cartIdRef.current) {
+        cartIdRef.current = crypto.randomUUID();
+        localStorage.setItem('cartId', cartIdRef.current);
     }
+  }, []);
 
-    setItems(loadedItems);
-    isInitialLoad.current = false;
-  }, [user]);
+  const fetchCart = async () => {
+    try {
+        setIsLoading(true);
+        const response = await wooCommerceService.get('/cart', {
+            headers: { 'x-cart-id': cartIdRef.current },
+            params: { userId: user?.uid }
+        });
+        
+        // Map backend items to frontend CartItem type if necessary
+        const backendItems = response.data.items || [];
+        // We'll trust the backend response which should include product details if we've synced them
+        // For now, let's assume the backend returns what we need or we fetch details
+        setItems(backendItems);
+    } catch (error) {
+        console.error('Failed to fetch cart:', error);
+    } finally {
+        setIsLoading(false);
+    }
+  };
 
-  // Save cart whenever items change (and after initial load)
   useEffect(() => {
-    if (isInitialLoad.current) return;
-    const cartKey = user ? `cart_${user.uid}` : 'cart_guest';
-    localStorage.setItem(cartKey, JSON.stringify(items));
-    localStorage.setItem('cart', JSON.stringify(items));
-  }, [items, user]);
+    fetchCart();
+  }, [user]);
 
   const getTieredPrice = (price: number, qty: number) => {
     if (qty >= 1000) return price * 0.7;
@@ -67,64 +75,73 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return price;
   };
 
-  const addToCart = (product: Product, quantity: number = 1, branding: string = 'None', isSample: boolean = false, customPrice?: number) => {
-    setItems(prev => {
-      const itemKey = `${product.id}-${branding}-${isSample ? 'sample' : 'bulk'}`;
-      
-      const existing = prev.find(item => {
-        const existingKey = `${item.id}-${(item as any).branding || 'None'}-${item.isSample ? 'sample' : 'bulk'}`;
-        return existingKey === itemKey;
-      });
-
-      if (existing) {
-        const newQuantity = existing.quantity + quantity;
-        const newPrice = isSample ? (customPrice || existing.price) : getTieredPrice(product.price, newQuantity);
+  const addToCart = async (product: Product, quantity: number = 1, branding: string = 'None', isSample: boolean = false, customPrice?: number) => {
+    try {
+        const itemPrice = isSample ? (customPrice || product.price * 3) : getTieredPrice(product.price, quantity);
         
-        return prev.map(item => {
-          const checkKey = `${item.id}-${(item as any).branding || 'None'}-${item.isSample ? 'sample' : 'bulk'}`;
-          return checkKey === itemKey ? { ...item, quantity: newQuantity, price: newPrice } : item;
+        const response = await wooCommerceService.post('/cart', {
+            productId: product.id,
+            quantity,
+            branding,
+            isSample,
+            price: itemPrice,
+            userId: user?.uid
+        }, {
+            headers: { 'x-cart-id': cartIdRef.current }
         });
-      }
 
-      const initialPrice = isSample ? (customPrice || product.price * 3) : getTieredPrice(product.price, quantity);
-      
-      return [...prev, { 
-        ...product, 
-        quantity, 
-        price: initialPrice, 
-        isSample, 
-        branding,
-        originalPrice: product.price 
-      } as CartItem];
-    });
-  };
-
-  const removeFromCart = (productId: string) => {
-    setItems(prev => prev.filter(item => item.id !== productId));
-  };
-
-  const updateQuantity = (productId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(productId);
-      return;
-    }
-    setItems(prev =>
-      prev.map(item => {
-        if (item.id === productId) {
-          const newPrice = getTieredPrice(item.originalPrice || item.price, quantity);
-          return { ...item, quantity, price: newPrice };
+        if (response.data.success) {
+            setItems(response.data.cart.items);
         }
-        return item;
-      })
-    );
+    } catch (error) {
+        console.error('Add to cart failed:', error);
+    }
   };
 
-  const clearCart = () => setItems([]);
+  const removeFromCart = async (productId: string) => {
+    try {
+        const response = await wooCommerceService.post('/cart', {
+            productId,
+            quantity: 0, // Backend deletes if quantity <= 0
+            userId: user?.uid
+        }, {
+            headers: { 'x-cart-id': cartIdRef.current }
+        });
+        setItems(response.data.cart.items);
+    } catch (error) {
+        console.error('Remove from cart failed:', error);
+    }
+  };
 
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const updateQuantity = async (productId: string, quantity: number) => {
+    try {
+        const item = items.find(i => i.id === productId);
+        if (!item) return;
+
+        const newPrice = getTieredPrice(item.originalPrice || item.price, quantity);
+
+        const response = await wooCommerceService.post('/cart', {
+            productId,
+            quantity,
+            price: newPrice,
+            userId: user?.uid
+        }, {
+            headers: { 'x-cart-id': cartIdRef.current }
+        });
+        setItems(response.data.cart.items);
+    } catch (error) {
+        console.error('Update quantity failed:', error);
+    }
+  };
+
+  const clearCart = () => {
+    setItems([]);
+    // Optionally call backend to clear
+  };
+
+  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
   const gstTotal = items.reduce((sum, item) => {
-    // Determine product category for GST (standardize it)
     const category = item.category || (item.categories && item.categories[0]) || 'Other';
     const rate = GST_RATES[category] || 0.18;
     return sum + (item.price * item.quantity * rate);
@@ -143,7 +160,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subtotal,
       gstTotal,
       total: estimateTotal,
-      itemCount 
+      itemCount,
+      isLoading
     }}>
       {children}
     </CartContext.Provider>
@@ -157,3 +175,4 @@ export const useCart = () => {
   }
   return context;
 };
+
