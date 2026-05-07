@@ -936,7 +936,14 @@ app.all('/api/*', (req, res) => {
 
 // Front-end SPA routing
 app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'index.html'));
+    // In production, serve the built index.html from dist
+    const distPath = path.resolve(__dirname, 'dist', 'index.html');
+    if (fs.existsSync(distPath)) {
+        res.sendFile(distPath);
+    } else {
+        // Fallback to root index.html if dist doesn't exist (dev mode fallback)
+        res.sendFile(path.resolve(__dirname, 'index.html'));
+    }
 });
 
 // Global Error Handler Middleware
