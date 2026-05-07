@@ -37,11 +37,7 @@ export default defineConfig(({mode}) => {
           secure: false,
         },
         '/api': {
-<<<<<<< HEAD
           target: 'http://127.0.0.1:8082',
-=======
-          target: 'http://localhost:8081',
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
           changeOrigin: true,
           secure: false,
         }

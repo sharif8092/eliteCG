@@ -1,47 +1,59 @@
-import Database from 'better-sqlite3';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+dotenv.config();
 
-const dbPath = path.join(__dirname, '..', 'cart.db');
-let db;
+const dbConfig = {
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+};
+
+let pool;
 
 try {
-    console.log(`[DB] Attempting to connect to SQLite at: ${dbPath}`);
-    db = new Database(dbPath, { verbose: console.log });
-    console.log('[DB] Connected successfully');
+  pool = mysql.createPool(dbConfig);
+  console.log(`[DB] Attempting to connect to MySQL at ${dbConfig.host} as ${dbConfig.user}`);
+  
+  // Test connection
+  const connection = await pool.getConnection();
+  console.log('[DB] Connected successfully to MySQL');
+  
+  // Initialize tables
+  await connection.execute(`
+    CREATE TABLE IF NOT EXISTS carts (
+      id VARCHAR(255) PRIMARY KEY,
+      user_id VARCHAR(255),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
 
-    // Initialize tables
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS carts (
-            id TEXT PRIMARY KEY,
-            user_id TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
+  await connection.execute(`
+    CREATE TABLE IF NOT EXISTS cart_items (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      cart_id VARCHAR(255),
+      product_id VARCHAR(255) NOT NULL,
+      quantity INT NOT NULL,
+      branding TEXT,
+      is_sample BOOLEAN DEFAULT 0,
+      price DECIMAL(10, 2),
+      metadata TEXT,
+      added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE
+    )
+  `);
 
-        CREATE TABLE IF NOT EXISTS cart_items (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            cart_id TEXT,
-            product_id TEXT NOT NULL,
-            quantity INTEGER NOT NULL,
-            branding TEXT,
-            is_sample BOOLEAN DEFAULT 0,
-            price REAL,
-            metadata TEXT,
-            added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_cart_user ON carts(user_id);
-        CREATE INDEX IF NOT EXISTS idx_items_cart ON cart_items(cart_id);
-    `);
-    console.log('[DB] Tables initialized successfully');
+  console.log('[DB] Tables verified/initialized');
+  connection.release();
 } catch (error) {
-    console.error('[DB] Initialization Error:', error.message, error.stack);
+  console.error('[DB] Connection/Initialization Error:', error.message);
 }
 
-export default db;
-
+// Wrapper to match better-sqlite3 API if needed, or just export pool
+// Since better-sqlite3 uses sync calls, this might require refactoring in server.js
+export default pool;

@@ -29,11 +29,7 @@ if (!CONSUMER_KEY || !CONSUMER_SECRET) {
 }
 
 const app = express();
-<<<<<<< HEAD
 const PORT = process.env.PORT || 8082; // Using 8082 to avoid potential conflicts with 8081
-=======
-const PORT = process.env.PORT || 8081; // Switched to 8081 for testing
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
 
 // Proper CORS Configuration
 const allowedOrigins = [
@@ -57,15 +53,11 @@ app.use(cors({
 
 app.use(express.json());
 
-<<<<<<< HEAD
 // DEBUG: Global Request Logger
 app.use((req, res, next) => {
     console.log(`[DEBUG-REQUEST] ${req.method} ${req.url}`);
     next();
 });
-
-=======
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
 // simple cache for ISR (60 seconds)
 const wpCache = new Map();
 const CACHE_TTL = 60 * 1000;
@@ -150,10 +142,8 @@ const wooClient = axios.create({
 const wpClient = axios.create({
     baseURL: `${CLEAN_WC_URL}/wp-json/wp/v2`,
     headers: {
-<<<<<<< HEAD
         'Authorization': `Basic ${Buffer.from(`${CONSUMER_KEY}:${CONSUMER_SECRET}`).toString('base64')}`,
-=======
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
+
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
 });
@@ -163,67 +153,55 @@ const wpClient = axios.create({
 // RESILIENCE ROUTE: If frontend accidentally calls /api/woo/wp/*
 // This redirects it to the correct /api/wp/* handler
 app.all('/api/woo/wp/*', (req, res) => {
-<<<<<<< HEAD
     const subPath = req.params[0] || req.url.split('/api/woo/wp/')[1];
     res.redirect(307, `/api/wp/${subPath}`);
 });
 
 // CART RESILIENCE: Handle /api/woo/cart directly by calling the local cart handlers
-app.get('/api/woo/cart', (req, res) => {
+app.get('/api/woo/cart', async (req, res) => {
     console.log(`[RESILIENCE] Internal GET /api/woo/cart`);
     const cartId = req.headers['x-cart-id'] || 'default-cart';
-    db.all('SELECT * FROM cart_items WHERE cart_id = ?', [cartId], (err, items) => {
-        if (err) return res.status(500).json({ error: err.message });
+    try {
+        const [items] = await db.execute('SELECT * FROM cart_items WHERE cart_id = ?', [cartId]);
         res.json({ id: cartId, items: items || [] });
-    });
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
 });
 
-app.post('/api/woo/cart', (req, res) => {
+app.post('/api/woo/cart', async (req, res) => {
     console.log(`[RESILIENCE] Internal POST /api/woo/cart`);
     const { productId, quantity, branding, isSample, price } = req.body;
     const cartId = req.headers['x-cart-id'] || 'default-cart';
 
-    db.run('INSERT OR REPLACE INTO carts (id) VALUES (?)', [cartId], (err) => {
-        if (err) return res.status(500).json({ error: err.message });
+    try {
+        await db.execute('INSERT IGNORE INTO carts (id) VALUES (?)', [cartId]);
 
-        db.get('SELECT * FROM cart_items WHERE cart_id = ? AND product_id = ?', [cartId, productId], (err, item) => {
-            if (item) {
-                db.run('UPDATE cart_items SET quantity = quantity + ? WHERE id = ?', [quantity, item.id], (err) => {
-                    if (err) return res.status(500).json({ error: err.message });
-                    res.json({ success: true });
-                });
-            } else {
-                db.run('INSERT INTO cart_items (cart_id, product_id, quantity, branding, is_sample, price) VALUES (?, ?, ?, ?, ?, ?)',
-                    [cartId, productId, quantity, branding, isSample, price], (err) => {
-                        if (err) return res.status(500).json({ error: err.message });
-                        res.json({ success: true });
-                    });
-            }
-        });
-    });
+        const [items] = await db.execute('SELECT * FROM cart_items WHERE cart_id = ? AND product_id = ?', [cartId, productId]);
+        const item = items[0];
+
+        if (item) {
+            await db.execute('UPDATE cart_items SET quantity = quantity + ? WHERE id = ?', [quantity, item.id]);
+            res.json({ success: true });
+        } else {
+            await db.execute('INSERT INTO cart_items (cart_id, product_id, quantity, branding, is_sample, price) VALUES (?, ?, ?, ?, ?, ?)',
+                [cartId, productId, quantity, branding, isSample, price]);
+            res.json({ success: true });
+        }
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
 });
 
 // GERNALIZED WOOCOMMERCE PROXY using Native HTTPS
 app.all('/api/woo/:subPath(*)', (req, res) => {
     const subPath = req.params.subPath;
-=======
-    const correctUrl = req.url.replace('/api/woo/wp/', '/api/wp/');
-    console.log(`[RESILIENCE] Correcting malformed API path: ${req.url} -> ${correctUrl}`);
-    res.redirect(307, correctUrl);
-});
-
-// GERNALIZED WOOCOMMERCE PROXY using Native HTTPS (to bypass library-specific firewall blocks)
-app.all('/api/woo/*', (req, res) => {
-    const subPath = req.params[0];
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
     const method = req.method;
     
     console.log(`[PROXY-WOO-NATIVE] ${method} /api/woo/${subPath}`);
     
-<<<<<<< HEAD
-=======
     // Construct Query String including credentials
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
+
     const queryParams = new URLSearchParams(req.query);
     queryParams.append('consumer_key', CONSUMER_KEY);
     queryParams.append('consumer_secret', CONSUMER_SECRET);
@@ -234,7 +212,6 @@ app.all('/api/woo/*', (req, res) => {
         method: method,
         headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-<<<<<<< HEAD
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         }
@@ -283,8 +260,6 @@ app.all('/api/wp/:subPath(*)', (req, res) => {
         method: method,
         headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-=======
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
             'Accept': 'application/json'
         }
     };
@@ -293,7 +268,6 @@ app.all('/api/wp/:subPath(*)', (req, res) => {
         let body = '';
         proxyRes.on('data', chunk => body += chunk);
         proxyRes.on('end', () => {
-<<<<<<< HEAD
             if (body.trim().startsWith('<!DOCTYPE')) {
                 console.error(`[PROXY-WP-NATIVE ERROR] Received HTML for ${subPath}`);
                 return res.status(proxyRes.statusCode || 403).json({ error: 'Access Blocked', details: 'WAF returned HTML' });
@@ -340,7 +314,6 @@ app.post('/api/woo/inquiry', async (req, res) => {
         ],
         line_items: [] // General inquiries might not have specific products yet
     };
-
     try {
         const auth = Buffer.from(`${CONSUMER_KEY}:${CONSUMER_SECRET}`).toString('base64');
         const response = await axios.post(`${CLEAN_WC_URL}/wp-json/wc/v3/orders`, orderData, {
@@ -354,64 +327,6 @@ app.post('/api/woo/inquiry', async (req, res) => {
     } catch (error) {
         console.error('[INQUIRY ERROR]', error.response?.data || error.message);
         res.status(500).json({ error: 'Failed to create inquiry in WooCommerce' });
-=======
-            try {
-                // If it's HTML, we still send it but it will be obvious in logs
-                if (body.trim().startsWith('<!DOCTYPE')) {
-                    console.error(`[PROXY-WOO-NATIVE ERROR] Received HTML instead of JSON for ${subPath}`);
-                    return res.status(proxyRes.statusCode || 403).json({
-                        error: 'WooCommerce returned HTML (Access Blocked)',
-                        details: body
-                    });
-                }
-
-                // Strip transfer-encoding for proxy consistency
-                const responseHeaders = { ...proxyRes.headers };
-                delete responseHeaders['transfer-encoding'];
-                delete responseHeaders['content-encoding']; // Avoid double compression issues
-
-                res.status(proxyRes.statusCode).set(responseHeaders).send(body);
-            } catch (e) {
-                res.status(500).json({ error: 'Proxy response parsing failed' });
-            }
-        });
-    });
-
-    proxyReq.on('error', (e) => {
-        console.error(`[PROXY-WOO-NATIVE CRITICAL]:`, e.message);
-        res.status(500).json({ error: 'Proxy request failed', message: e.message });
-    });
-
-    if (req.body && Object.keys(req.body).length > 0) {
-        proxyReq.write(JSON.stringify(req.body));
-    }
-    proxyReq.end();
-});
-
-// GERNALIZED WORDPRESS PROXY
-app.all('/api/wp/*', async (req, res) => {
-    const subPath = req.params[0];
-    const method = req.method.toLowerCase();
-    
-    console.log(`[PROXY-WP] ${req.method} /api/wp/${subPath}`);
-    
-    try {
-        // NOTE: WP v2 API doesn't always need auth for GETs
-        const config = {
-            method,
-            url: `/${subPath}`,
-            params: req.query,
-            data: req.body
-        };
-        const response = await wpClient.request(config);
-        res.json(response.data);
-    } catch (error) {
-        console.error(`[PROXY-WP ERROR] ${subPath}:`, error.response?.data || error.message);
-        res.status(error.response?.status || 500).json({
-            error: 'WordPress Proxy Error',
-            details: error.response?.data || error.message
-        });
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
     }
 });
 
@@ -448,15 +363,17 @@ app.get('/api/products/:id', async (req, res) => {
     }
 });
 
-// CART SYSTEM IMPLEMENTATION (SQLite backed)
-const getCart = (id) => {
-    const cart = db.prepare('SELECT * FROM carts WHERE id = ?').get(id);
+// CART SYSTEM IMPLEMENTATION (MySQL backed)
+const getCart = async (id) => {
+    if (!db) return null;
+    const [carts] = await db.execute('SELECT * FROM carts WHERE id = ?', [id]);
+    const cart = carts[0];
     if (!cart) return null;
-    const items = db.prepare('SELECT * FROM cart_items WHERE cart_id = ?').all(id);
+    const [items] = await db.execute('SELECT * FROM cart_items WHERE cart_id = ?', [id]);
     return { ...cart, items: items.map(item => ({ ...item, metadata: JSON.parse(item.metadata || '{}') })) };
 };
 
-app.get('/api/cart', (req, res) => {
+app.get('/api/cart', async (req, res) => {
     console.log('[ROUTE] GET /api/cart hit');
     try {
         if (!db) {
@@ -471,10 +388,16 @@ app.get('/api/cart', (req, res) => {
             return res.json({ items: [] });
         }
 
-        let cart = userId ? db.prepare('SELECT * FROM carts WHERE user_id = ?').get(userId) : getCart(cartId);
+        let cart;
+        if (userId) {
+            const [rows] = await db.execute('SELECT * FROM carts WHERE user_id = ?', [userId]);
+            cart = rows[0];
+        } else {
+            cart = await getCart(cartId);
+        }
         
         if (!cart && cartId) {
-            db.prepare('INSERT INTO carts (id) VALUES (?)').run(cartId);
+            await db.execute('INSERT INTO carts (id) VALUES (?)', [cartId]);
             cart = { id: cartId, items: [] };
         }
 
@@ -485,7 +408,7 @@ app.get('/api/cart', (req, res) => {
     }
 });
 
-app.post('/api/cart', (req, res) => {
+app.post('/api/cart', async (req, res) => {
     let cartId = req.headers['x-cart-id'];
     const { productId, quantity, branding, isSample, userId, price } = req.body;
 
@@ -500,30 +423,34 @@ app.post('/api/cart', (req, res) => {
         }
 
         // Ensure cart exists
-        const existingCart = db.prepare('SELECT * FROM carts WHERE id = ? OR (user_id = ? AND user_id IS NOT NULL)').get(cartId, userId);
+        const [existingCarts] = await db.execute('SELECT * FROM carts WHERE id = ? OR (user_id = ? AND user_id IS NOT NULL)', [cartId, userId]);
+        const existingCart = existingCarts[0];
         if (!existingCart) {
-            db.prepare('INSERT INTO carts (id, user_id) VALUES (?, ?)').run(cartId, userId || null);
+            await db.execute('INSERT INTO carts (id, user_id) VALUES (?, ?)', [cartId, userId || null]);
         } else {
             cartId = existingCart.id;
         }
 
         // Check if item exists in cart
-        const existingItem = db.prepare('SELECT * FROM cart_items WHERE cart_id = ? AND product_id = ? AND branding = ? AND is_sample = ?')
-            .get(cartId, productId.toString(), branding || 'None', isSample ? 1 : 0);
+        const [existingItems] = await db.execute(
+            'SELECT * FROM cart_items WHERE cart_id = ? AND product_id = ? AND branding = ? AND is_sample = ?',
+            [cartId, productId.toString(), branding || 'None', isSample ? 1 : 0]
+        );
+        const existingItem = existingItems[0];
 
         if (existingItem) {
             if (quantity <= 0) {
-                db.prepare('DELETE FROM cart_items WHERE id = ?').run(existingItem.id);
+                await db.execute('DELETE FROM cart_items WHERE id = ?', [existingItem.id]);
             } else {
-                db.prepare('UPDATE cart_items SET quantity = ?, price = ? WHERE id = ?')
-                    .run(quantity, price, existingItem.id);
+                await db.execute('UPDATE cart_items SET quantity = ?, price = ? WHERE id = ?',
+                    [quantity, price, existingItem.id]);
             }
         } else if (quantity > 0) {
-            db.prepare('INSERT INTO cart_items (cart_id, product_id, quantity, branding, is_sample, price, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)')
-                .run(cartId, productId.toString(), quantity, branding || 'None', isSample ? 1 : 0, price, JSON.stringify({}));
+            await db.execute('INSERT INTO cart_items (cart_id, product_id, quantity, branding, is_sample, price, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [cartId, productId.toString(), quantity, branding || 'None', isSample ? 1 : 0, price, JSON.stringify({})]);
         }
 
-        res.json({ success: true, cartId, cart: getCart(cartId) });
+        res.json({ success: true, cartId, cart: await getCart(cartId) });
     } catch (error) {
         console.error("FULL ERROR (Post-Cart):", error.message, error.stack);
         res.status(500).json({ error: 'Database Operation Failed', details: error.message });
@@ -535,7 +462,18 @@ app.post('/api/checkout', async (req, res) => {
     const { cartId, userId, billing, shipping, payment_method } = req.body;
     
     try {
-        const cart = userId ? db.prepare('SELECT * FROM carts WHERE user_id = ?').get(userId) : getCart(cartId);
+        let cart;
+        if (userId) {
+            const [rows] = await db.execute('SELECT * FROM carts WHERE user_id = ?', [userId]);
+            const cartRow = rows[0];
+            if (cartRow) {
+                const [items] = await db.execute('SELECT * FROM cart_items WHERE cart_id = ?', [cartRow.id]);
+                cart = { ...cartRow, items: items.map(item => ({ ...item, metadata: JSON.parse(item.metadata || '{}') })) };
+            }
+        } else {
+            cart = await getCart(cartId);
+        }
+
         if (!cart || !cart.items || cart.items.length === 0) {
             return res.status(400).json({ error: 'Cart is empty' });
         }
@@ -592,7 +530,7 @@ app.post('/api/checkout', async (req, res) => {
         const response = await wooClient.post('/orders', orderData);
 
         // 3. CLEAR CART ON SUCCESS
-        db.prepare('DELETE FROM cart_items WHERE cart_id = ?').run(cart.id);
+        await db.execute('DELETE FROM cart_items WHERE cart_id = ?', [cart.id]);
 
         res.status(201).json({ 
             success: true, 
