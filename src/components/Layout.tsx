@@ -77,11 +77,33 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </div>
             </div>
           </div>
+<<<<<<< HEAD
+          <div className="mt-24 pt-12 border-t border-stone-800">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 items-center text-[9px] uppercase tracking-[0.3em] font-bold">
+              <div>
+                <p>&copy; {new Date().getFullYear()} Urban Shark Corporate. All rights reserved.</p>
+                <p className="mt-2 text-stone-700">GSTIN: 08AAACU9103F1Z5</p>
+              </div>
+              <div className="flex justify-center space-x-8">
+                <a href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</a>
+                <a href="/refund-policy" className="hover:text-white transition-colors">Refund Policy</a>
+                <a href="/terms" className="hover:text-white transition-colors">Terms of Service</a>
+              </div>
+              <div className="flex justify-end gap-6 grayscale opacity-40 hover:opacity-100 transition-opacity">
+                 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png" alt="Visa" className="h-3 w-auto" />
+                 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png" alt="Mastercard" className="h-4 w-auto" />
+                 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/UPI-Logo-vector.svg/1200px-UPI-Logo-vector.svg.png" alt="UPI" className="h-3 w-auto" />
+              </div>
+            </div>
+            <div className="mt-8 text-center text-[8px] text-stone-700 uppercase tracking-widest leading-relaxed">
+              Urban Shark Lifestyle Pvt Ltd • Plot No. 42, Industrial Area, Phase II, New Delhi, 110020 • PAN India Logistics Partner
+=======
           <div className="mt-24 pt-8 border-t border-stone-800 flex flex-col md:flex-row justify-between items-center text-[9px] uppercase tracking-[0.3em] font-bold">
             <p>&copy; {new Date().getFullYear()} Urban Shark Corporate. All rights reserved.</p>
             <div className="flex space-x-8 mt-4 md:mt-0">
               <a href="/privacy" className="hover:text-white transition-colors">Privacy</a>
               <a href="/terms" className="hover:text-white transition-colors">Terms</a>
+>>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
             </div>
           </div>
         </div>

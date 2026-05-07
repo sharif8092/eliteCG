@@ -90,6 +90,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
         {/* Subtle Badges */}
         <div className="absolute top-6 left-6 flex flex-col gap-2">
           {product.featured && (
+<<<<<<< HEAD
+            <div className="bg-stone-900 px-3 py-1 rounded-full w-fit">
+              <span className="text-[8px] uppercase tracking-widest font-bold text-white">Corporate Pick</span>
+            </div>
+          )}
+          {product.reviewCount > 20 && (
+            <div className="bg-emerald-800 px-3 py-1 rounded-full w-fit">
+              <span className="text-[8px] uppercase tracking-widest font-bold text-white">Best Seller</span>
+            </div>
+          )}
+          <div className="bg-white/90 backdrop-blur-md px-3 py-1 rounded-full w-fit border border-stone-100">
+            <span className="text-[8px] uppercase tracking-widest font-bold text-stone-900 italic">MOQ: 25 Units</span>
+          </div>
+=======
             <div className="bg-white/90 backdrop-blur-md px-3 py-1 rounded-full w-fit">
               <span className="text-[8px] uppercase tracking-widest font-bold text-emerald-800">Featured</span>
             </div>
@@ -99,6 +113,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
               <span className="text-[8px] uppercase tracking-widest font-bold text-white">-{discount}%</span>
             </div>
           )}
+>>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
         </div>
 
         <button
@@ -145,6 +160,38 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
           </div>
 
           <div className="flex items-center justify-center gap-3">
+<<<<<<< HEAD
+            <p className="text-stone-900 font-serif text-sm">
+              <span className="text-stone-400 text-[10px] uppercase tracking-widest font-sans not-italic mr-1">Starts at</span>
+              ₹{product.price.toLocaleString()} 
+              <span className="text-stone-400 text-[10px] ml-1 not-italic font-sans">/ unit</span>
+            </p>
+          </div>
+          
+          <div className="flex items-center justify-center gap-4 py-1">
+            <span className="text-[8px] uppercase tracking-widest text-stone-400 flex items-center gap-1">
+              <Check size={8} className="text-emerald-500" /> GST Invoice
+            </span>
+            <span className="text-[8px] uppercase tracking-widest text-stone-400 flex items-center gap-1">
+              <Check size={8} className="text-emerald-500" /> Branding
+            </span>
+          </div>
+        </Link>
+
+        {/* WhatsApp Inquiry Button for Product */}
+        <div className="mt-4">
+          <a
+            href={`https://wa.me/917909096738?text=${encodeURIComponent(`Hi, I'm interested in bulk quantities of ${product.name}. Please share a quote.`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 text-stone-500 hover:text-emerald-600 transition-colors py-2 border-t border-stone-50"
+          >
+            <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
+              <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.891 11.891-11.891 3.181 0 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.481 8.403 0 6.556-5.332 11.891-11.891 11.891-2.01 0-3.991-.51-5.751-1.474l-6.243 1.694zm6.103-2.723c1.486.883 2.49 1.096 4.399 1.096 5.45 0 9.886-4.437 9.886-9.886 0-5.45-4.436-9.886-9.886-9.886-5.451 0-9.886 4.436-9.886 9.886 0 2.019.549 3.395 1.541 4.98l-1.011 3.705 3.957-1.075zm12.466-6.411c-.329-.165-1.948-.962-2.248-1.071-.3-.109-.519-.165-.736.165-.218.329-.838 1.071-1.026 1.288-.188.218-.376.247-.706.082-.329-.165-1.391-.512-2.651-1.635-1.02-.91-1.708-2.033-1.908-2.378-.2-.345-.021-.531.144-.694.148-.145.329-.384.493-.576.165-.192.219-.329.329-.548.11-.219.055-.411-.027-.576-.082-.165-.736-1.774-1.008-2.426-.266-.633-.535-.547-.736-.557-.188-.009-.404-.011-.619-.011s-.563.081-.856.402c-.292.321-1.114 1.092-1.114 2.663s1.146 3.09 1.306 3.31c.159.22 2.257 3.447 5.467 4.834.763.329 1.358.525 1.821.672.766.244 1.464.21 2.014.128.614-.092 1.948-.796 2.222-1.564.274-.768.274-1.427.192-1.564-.082-.138-.301-.22-.631-.385z"/></svg>
+            <span className="text-[10px] uppercase tracking-widest font-bold">Bulk Quote</span>
+          </a>
+        </div>
+=======
             {product.originalPrice && product.originalPrice > product.price && (
               <p className="text-stone-300 font-light text-xs line-through font-serif">
                 ₹{product.originalPrice.toLocaleString()}
@@ -155,6 +202,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
             </p>
           </div>
         </Link>
+>>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
       </div>
     </motion.div>
   );
