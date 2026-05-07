@@ -29,7 +29,11 @@ if (!CONSUMER_KEY || !CONSUMER_SECRET) {
 }
 
 const app = express();
+<<<<<<< HEAD
 const PORT = process.env.PORT || 8082; // Using 8082 to avoid potential conflicts with 8081
+=======
+const PORT = process.env.PORT || 8081; // Switched to 8081 for testing
+>>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
 
 // Proper CORS Configuration
 const allowedOrigins = [
@@ -53,12 +57,15 @@ app.use(cors({
 
 app.use(express.json());
 
+<<<<<<< HEAD
 // DEBUG: Global Request Logger
 app.use((req, res, next) => {
     console.log(`[DEBUG-REQUEST] ${req.method} ${req.url}`);
     next();
 });
 
+=======
+>>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
 // simple cache for ISR (60 seconds)
 const wpCache = new Map();
 const CACHE_TTL = 60 * 1000;
@@ -143,7 +150,10 @@ const wooClient = axios.create({
 const wpClient = axios.create({
     baseURL: `${CLEAN_WC_URL}/wp-json/wp/v2`,
     headers: {
+<<<<<<< HEAD
         'Authorization': `Basic ${Buffer.from(`${CONSUMER_KEY}:${CONSUMER_SECRET}`).toString('base64')}`,
+=======
+>>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
 });
@@ -153,6 +163,7 @@ const wpClient = axios.create({
 // RESILIENCE ROUTE: If frontend accidentally calls /api/woo/wp/*
 // This redirects it to the correct /api/wp/* handler
 app.all('/api/woo/wp/*', (req, res) => {
+<<<<<<< HEAD
     const subPath = req.params[0] || req.url.split('/api/woo/wp/')[1];
     res.redirect(307, `/api/wp/${subPath}`);
 });
@@ -195,10 +206,24 @@ app.post('/api/woo/cart', (req, res) => {
 // GERNALIZED WOOCOMMERCE PROXY using Native HTTPS
 app.all('/api/woo/:subPath(*)', (req, res) => {
     const subPath = req.params.subPath;
+=======
+    const correctUrl = req.url.replace('/api/woo/wp/', '/api/wp/');
+    console.log(`[RESILIENCE] Correcting malformed API path: ${req.url} -> ${correctUrl}`);
+    res.redirect(307, correctUrl);
+});
+
+// GERNALIZED WOOCOMMERCE PROXY using Native HTTPS (to bypass library-specific firewall blocks)
+app.all('/api/woo/*', (req, res) => {
+    const subPath = req.params[0];
+>>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
     const method = req.method;
     
     console.log(`[PROXY-WOO-NATIVE] ${method} /api/woo/${subPath}`);
     
+<<<<<<< HEAD
+=======
+    // Construct Query String including credentials
+>>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
     const queryParams = new URLSearchParams(req.query);
     queryParams.append('consumer_key', CONSUMER_KEY);
     queryParams.append('consumer_secret', CONSUMER_SECRET);
@@ -209,6 +234,7 @@ app.all('/api/woo/:subPath(*)', (req, res) => {
         method: method,
         headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+<<<<<<< HEAD
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         }
@@ -257,6 +283,8 @@ app.all('/api/wp/:subPath(*)', (req, res) => {
         method: method,
         headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+=======
+>>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
             'Accept': 'application/json'
         }
     };
@@ -265,6 +293,7 @@ app.all('/api/wp/:subPath(*)', (req, res) => {
         let body = '';
         proxyRes.on('data', chunk => body += chunk);
         proxyRes.on('end', () => {
+<<<<<<< HEAD
             if (body.trim().startsWith('<!DOCTYPE')) {
                 console.error(`[PROXY-WP-NATIVE ERROR] Received HTML for ${subPath}`);
                 return res.status(proxyRes.statusCode || 403).json({ error: 'Access Blocked', details: 'WAF returned HTML' });
@@ -325,6 +354,64 @@ app.post('/api/woo/inquiry', async (req, res) => {
     } catch (error) {
         console.error('[INQUIRY ERROR]', error.response?.data || error.message);
         res.status(500).json({ error: 'Failed to create inquiry in WooCommerce' });
+=======
+            try {
+                // If it's HTML, we still send it but it will be obvious in logs
+                if (body.trim().startsWith('<!DOCTYPE')) {
+                    console.error(`[PROXY-WOO-NATIVE ERROR] Received HTML instead of JSON for ${subPath}`);
+                    return res.status(proxyRes.statusCode || 403).json({
+                        error: 'WooCommerce returned HTML (Access Blocked)',
+                        details: body
+                    });
+                }
+
+                // Strip transfer-encoding for proxy consistency
+                const responseHeaders = { ...proxyRes.headers };
+                delete responseHeaders['transfer-encoding'];
+                delete responseHeaders['content-encoding']; // Avoid double compression issues
+
+                res.status(proxyRes.statusCode).set(responseHeaders).send(body);
+            } catch (e) {
+                res.status(500).json({ error: 'Proxy response parsing failed' });
+            }
+        });
+    });
+
+    proxyReq.on('error', (e) => {
+        console.error(`[PROXY-WOO-NATIVE CRITICAL]:`, e.message);
+        res.status(500).json({ error: 'Proxy request failed', message: e.message });
+    });
+
+    if (req.body && Object.keys(req.body).length > 0) {
+        proxyReq.write(JSON.stringify(req.body));
+    }
+    proxyReq.end();
+});
+
+// GERNALIZED WORDPRESS PROXY
+app.all('/api/wp/*', async (req, res) => {
+    const subPath = req.params[0];
+    const method = req.method.toLowerCase();
+    
+    console.log(`[PROXY-WP] ${req.method} /api/wp/${subPath}`);
+    
+    try {
+        // NOTE: WP v2 API doesn't always need auth for GETs
+        const config = {
+            method,
+            url: `/${subPath}`,
+            params: req.query,
+            data: req.body
+        };
+        const response = await wpClient.request(config);
+        res.json(response.data);
+    } catch (error) {
+        console.error(`[PROXY-WP ERROR] ${subPath}:`, error.response?.data || error.message);
+        res.status(error.response?.status || 500).json({
+            error: 'WordPress Proxy Error',
+            details: error.response?.data || error.message
+        });
+>>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
     }
 });
 

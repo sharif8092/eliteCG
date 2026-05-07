@@ -15,6 +15,7 @@ const mapWooReviewToInternal = (wooReview: any): Review => {
 };
 
 export const reviewService = {
+<<<<<<< HEAD
     // Get all latest reviews
     async getLatestReviews(limit: number = 3): Promise<Review[]> {
         const response = await wooCommerceService.get('/products/reviews', {
@@ -23,6 +24,14 @@ export const reviewService = {
                 status: 'approved',
                 orderby: 'date',
                 order: 'desc'
+=======
+    // Get reviews for a product
+    async getReviewsByProductId(productId: string): Promise<Review[]> {
+        const response = await wooCommerceService.get('/products/reviews', {
+            params: {
+                product: productId,
+                per_page: 50
+>>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
             }
         });
         return (response.data as any[]).map(mapWooReviewToInternal);
