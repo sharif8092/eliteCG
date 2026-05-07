@@ -1,30 +1,19 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-<<<<<<< HEAD
 import { ArrowRight, Star, ShieldCheck, Truck, Mail, Package, CreditCard, RotateCcw, Quote, Sparkles, ChevronLeft, ChevronRight, Calendar, User as UserIcon, CheckCircle2, Send, Phone, MessageSquare } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import { reviewService } from '../services/reviewService';
-=======
-import { ArrowRight, Star, ShieldCheck, Truck, Mail, Package, CreditCard, RotateCcw, Quote, Sparkles, ChevronLeft, ChevronRight, Calendar, User as UserIcon } from 'lucide-react';
-import ProductCard from '../components/ProductCard';
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
 import { productService } from '../services/productService';
 import { offerService } from '../services/offerService';
 import { blogService } from '../services/blogService';
 import { categoryService, Category } from '../services/categoryService';
-<<<<<<< HEAD
 import { Product, Offer, BlogPost, Review } from '../types';
 import SEO from '../components/SEO';
 import { decodeHtml } from '../utils/formatUtils';
 import QuotationForm from '../components/QuotationForm';
 import { useCart } from '../context/CartContext';
 import wooCommerceService from '../services/wooCommerceService';
-=======
-import { Product, Offer, BlogPost } from '../types';
-import SEO from '../components/SEO';
-import { decodeHtml } from '../utils/formatUtils';
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
 
 const DEFAULT_HERO_SLIDES = [
   {
@@ -55,7 +44,6 @@ const Home: React.FC = () => {
   const [activeOffer, setActiveOffer] = useState<Offer | null>(null);
   const [latestPosts, setLatestPosts] = useState<BlogPost[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-<<<<<<< HEAD
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [isQuotationModalOpen, setIsQuotationModalOpen] = useState(false);
@@ -69,9 +57,6 @@ const Home: React.FC = () => {
     requirements: ''
   });
   const { items, subtotal, total } = useCart();
-=======
-  const [loading, setLoading] = useState(true);
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
 
   // Hero carousel state
   const [heroSlide, setHeroSlide] = useState(0);
@@ -111,13 +96,10 @@ const Home: React.FC = () => {
         // Fetch categories
         const allCategories = await categoryService.getAllCategories();
         setCategories(allCategories);
-<<<<<<< HEAD
 
         // Fetch latest reviews
         const allReviews = await reviewService.getLatestReviews(6);
         setReviews(allReviews);
-=======
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
       } catch (error) {
         console.error('Error fetching home data:', error);
       } finally {
@@ -167,7 +149,6 @@ const Home: React.FC = () => {
     setTimeout(() => setLoading(false), 300);
   };
 
-<<<<<<< HEAD
   const handleInquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -184,8 +165,6 @@ const Home: React.FC = () => {
     }
   };
 
-=======
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
   // Hero carousel state
 
   return (
@@ -231,11 +210,7 @@ const Home: React.FC = () => {
         {/* Slides */}
         {DEFAULT_HERO_SLIDES.map((slide, i) => (
           <motion.div
-<<<<<<< HEAD
             key={`hero-slide-${i}`}
-=======
-            key={i}
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
             initial={{ opacity: 0 }}
             animate={{ opacity: heroSlide === i ? 1 : 0 }}
             transition={{ duration: 0.8 }}
@@ -263,7 +238,6 @@ const Home: React.FC = () => {
                 <span className="text-emerald-300 text-[9px] sm:text-[10px] uppercase tracking-[0.4em] font-bold mb-2 block">
                   {slide.subtitle}
                 </span>
-<<<<<<< HEAD
                 <h1 className="text-3xl sm:text-5xl md:text-7xl font-extrabold text-white uppercase leading-[0.95] tracking-tight mb-4">
                   {slide.title}
                 </h1>
@@ -301,20 +275,6 @@ const Home: React.FC = () => {
                     WhatsApp Inquiry
                   </a>
                 </div>
-=======
-                <h1 className="text-3xl sm:text-5xl md:text-7xl font-extrabold text-white uppercase leading-[0.95] tracking-tight mb-2">
-                  {slide.title}
-                </h1>
-                <p className="text-white/60 text-sm sm:text-base font-light mb-6">
-                  {slide.desc}
-                </p>
-                <Link
-                  to={slide.link}
-                  className="inline-block bg-white text-stone-900 px-6 sm:px-8 py-3 sm:py-3.5 rounded-lg font-extrabold text-[10px] sm:text-xs uppercase tracking-widest hover:bg-emerald-50 transition-all shadow-lg"
-                >
-                  Shop Now
-                </Link>
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
               </motion.div>
             </div>
           </motion.div>
@@ -343,11 +303,7 @@ const Home: React.FC = () => {
           <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
             {DEFAULT_HERO_SLIDES.map((_, i) => (
               <button
-<<<<<<< HEAD
                 key={`hero-dot-${i}`}
-=======
-                key={i}
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
                 onClick={() => setHeroSlide(i)}
                 className={`h-1.5 rounded-full transition-all duration-300 ${heroSlide === i ? 'w-8 bg-white' : 'w-1.5 bg-white/40 hover:bg-white/60'}`}
               />
@@ -410,7 +366,6 @@ const Home: React.FC = () => {
             >
               All
             </button>
-<<<<<<< HEAD
             {categories
               .filter(cat => cat.name.toLowerCase() !== 'uncategorized' && cat.count > 0)
               .map((cat) => {
@@ -428,23 +383,6 @@ const Home: React.FC = () => {
                   </button>
                 );
               })}
-=======
-            {categories.map((cat) => {
-              const decodedName = decodeHtml(cat.name);
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => handleCategoryChange(decodedName)}
-                  className={`px-6 py-2.5 rounded-lg text-[10px] sm:text-[11px] font-black uppercase whitespace-nowrap transition-all duration-300 shadow-sm border ${selectedCategory === decodedName
-                    ? 'bg-stone-900 text-white border-stone-900 shadow-stone-200 ring-2 ring-stone-900/10'
-                    : 'bg-white text-stone-500 border-stone-200 hover:border-stone-400 hover:text-stone-900 hover:shadow-md'
-                    }`}
-                >
-                  {decodedName}
-                </button>
-              );
-            })}
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
           </div>
           {/* Subtle fade indicator for mobile scroll */}
           <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-white to-transparent pointer-events-none sm:hidden" />
@@ -486,7 +424,6 @@ const Home: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-<<<<<<< HEAD
               { label: 'Under ₹500', min: 0, max: 500, image: '/budget1.png' },
               { label: '₹500 - ₹1000', min: 500, max: 1000, image: '/budget2.png' },
               { label: '₹1000 - ₹2000', min: 1000, max: 2000, image: '/budget3.png' },
@@ -494,15 +431,6 @@ const Home: React.FC = () => {
             ].map((budget, i) => (
               <Link
                 key={`budget-${budget.label}`}
-=======
-              { label: 'Under ₹500', min: 0, max: 500, image: '/Hero9.jpg' },
-              { label: '₹500 - ₹1000', min: 500, max: 1000, image: '/Hero10.jpg' },
-              { label: '₹1000 - ₹2000', min: 1000, max: 2000, image: '/Hero11.jpg' },
-              { label: 'Premium Gifts', min: 2000, max: 50000, image: '/Hero12.jpg' },
-            ].map((budget, i) => (
-              <Link
-                key={i}
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
                 to={`/products?min_price=${budget.min}&max_price=${budget.max}`}
                 className="group relative aspect-[4/5] rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500"
               >
@@ -543,11 +471,7 @@ const Home: React.FC = () => {
                   { title: 'Bespoke Packaging', desc: 'Choose from our existing premium sets or work with us for unique, company-branded wraps.' },
                   { title: 'Tax Benefits', desc: 'Full GST invoicing for all corporate orders to help with your business accounting.' },
                 ].map((service, i) => (
-<<<<<<< HEAD
                   <div key={`service-${service.title}`} className="flex gap-4">
-=======
-                  <div key={i} className="flex gap-4">
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 flex-shrink-0" />
                     <div>
                       <h4 className="text-white font-bold text-sm uppercase tracking-wider mb-1">{service.title}</h4>
@@ -581,7 +505,6 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-<<<<<<< HEAD
       {/* ═══ TRUSTED BY CORPORATE GIANTS ═══ */}
       <section className="py-16 bg-white border-b border-stone-100 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -663,8 +586,6 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-=======
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
       {/* ═══ RAMADAN SPECIAL BANNER (Updated for Corporate Focus) ═══ */}
       <section className="relative overflow-hidden">
         <div className="bg-white py-16 md:py-20 border-y border-stone-100">
@@ -747,11 +668,7 @@ const Home: React.FC = () => {
               <h2 className="text-5xl md:text-7xl font-serif leading-[1.1] tracking-tight">
                 {latestPosts[0] ? (
                   latestPosts[0].title.split(' ').map((word, i) => (
-<<<<<<< HEAD
                     <React.Fragment key={`title-word-${i}`}>
-=======
-                    <React.Fragment key={i}>
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
                       {i === 1 ? <span className="italic text-emerald-400">{word} </span> : word + ' '}
                       {i === 1 && <br />}
                     </React.Fragment>
@@ -800,7 +717,6 @@ const Home: React.FC = () => {
       </section>
 
       {/* ═══ CUSTOMER TESTIMONIALS ═══ */}
-<<<<<<< HEAD
       <section className="bg-stone-50 py-24 md:py-40 overflow-hidden relative">
         <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03] pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -878,61 +794,6 @@ const Home: React.FC = () => {
                       <div className="text-stone-900 font-bold text-sm tracking-tight">{review.reviewer}</div>
                       <div className="text-stone-400 text-[10px] uppercase tracking-widest font-bold">{(review as any).role || 'Corporate Partner'}</div>
                     </div>
-=======
-      <section className="bg-stone-50 py-24 md:py-32 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <span className="text-emerald-800 text-[10px] uppercase tracking-[0.5em] font-bold mb-3 block">Testimonials</span>
-            <h2 className="text-4xl md:text-6xl font-serif text-stone-900">What Our <span className="italic">Customers</span> Say</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                name: 'Aisha Khan',
-                location: 'Mumbai',
-                rating: 5,
-                text: 'The quality of the abayas is exceptional. I\'ve ordered multiple times and each piece feels luxurious. The packaging is beautiful too!',
-                avatar: 'A',
-              },
-              {
-                name: 'Mohammed Ali',
-                location: 'Delhi',
-                rating: 5,
-                text: 'Found the perfect itter collection here. The fragrances are long-lasting and authentic. Highly recommend their Oudh Al Arab!',
-                avatar: 'M',
-              },
-              {
-                name: 'Fatima Shaikh',
-                location: 'Hyderabad',
-                rating: 5,
-                text: 'Their janamaz collection is stunning. The velvet prayer mat I ordered is so soft and the patterns are gorgeous. Great customer service!',
-                avatar: 'F',
-              },
-            ].map((review, i) => (
-              <motion.div
-                key={review.name}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.15, duration: 0.6 }}
-                className="bg-white rounded-3xl p-8 shadow-sm hover:shadow-lg transition-shadow duration-500 relative"
-              >
-                <Quote size={32} className="text-emerald-100 absolute top-6 right-6" />
-                <div className="flex gap-1 mb-4">
-                  {Array.from({ length: review.rating }).map((_, j) => (
-                    <Star key={j} size={14} className="text-amber-400 fill-amber-400" />
-                  ))}
-                </div>
-                <p className="text-stone-600 leading-relaxed mb-6 font-light">{review.text}</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-800 font-bold text-sm">
-                    {review.avatar}
-                  </div>
-                  <div>
-                    <div className="text-stone-900 font-bold text-sm">{review.name}</div>
-                    <div className="text-stone-400 text-xs">{review.location}</div>
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
                   </div>
                 </div>
               </motion.div>
@@ -941,7 +802,6 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-<<<<<<< HEAD
       {/* ═══ PERSONALIZATION & BRANDING (CINEMATIC) ═══ */}
       <section className="py-24 md:py-40 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1196,117 +1056,7 @@ const Home: React.FC = () => {
         items={items}
         onSuccess={() => {}}
       />
-=======
-      {/* ═══ CURATED COLLECTIONS ═══ */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
-        <div className="text-center mb-20">
-          <h2 className="text-4xl md:text-6xl font-serif text-stone-900 mb-6">Shop by <span className="italic">Collection</span></h2>
-          <p className="text-stone-500 max-w-lg mx-auto font-light">Explore our thoughtfully assembled edits, designed for every professional milestone and corporate celebration.</p>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-          <Link to="/products?category=Office" className="group relative aspect-[16/10] overflow-hidden rounded-[2rem] md:rounded-[3rem]">
-            <img
-              src="/Hero2.jpg"
-              alt="Executive Gifts"
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
-              referrerPolicy="no-referrer"
-            />
-            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
-            <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-8">
-              <h3 className="text-4xl md:text-5xl font-serif text-white mb-4">The Executive Edit</h3>
-              <span className="text-white/80 text-[10px] uppercase tracking-[0.3em] font-bold border-b border-white/40 pb-1">Shop Now</span>
-            </div>
-          </Link>
-
-          <Link to="/products?category=Hampers" className="group relative aspect-[16/10] overflow-hidden rounded-[2rem] md:rounded-[3rem]">
-            <img
-              src="/Hero3.jpg"
-              alt="Premium Hampers"
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
-              referrerPolicy="no-referrer"
-            />
-            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
-            <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-8">
-              <h3 className="text-4xl md:text-5xl font-serif text-white mb-4">Premium Hampers</h3>
-              <span className="text-white/80 text-[10px] uppercase tracking-[0.3em] font-bold border-b border-white/40 pb-1">Shop Now</span>
-            </div>
-          </Link>
-        </div>
-      </section>
-
-      {/* ═══ BULK INQUIRY FORM ═══ */}
-      <section id="inquiry" className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
-        <div className="bg-stone-50 rounded-[3rem] p-8 md:p-16 border border-stone-100 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16 blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-teal-500/5 rounded-full -ml-16 -mb-16 blur-3xl" />
-
-          <div className="max-w-2xl mx-auto text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-serif text-stone-900 mb-4">Request a <span className="italic">Quote</span></h2>
-            <p className="text-stone-500 font-light">Fill out the form below and our corporate gifting experts will get back to you within 24 hours.</p>
-          </div>
-
-          <form className="grid grid-cols-1 md:grid-cols-2 gap-6" onSubmit={(e) => { e.preventDefault(); alert('Trial Inquiry Sent! We will contact you soon.'); }}>
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-widest font-bold text-stone-400 ml-1">Full Name</label>
-              <input
-                required
-                type="text"
-                placeholder="Ex: John Doe"
-                className="w-full bg-white border border-stone-200 rounded-xl px-5 py-4 text-stone-900 placeholder:text-stone-300 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all font-light"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-widest font-bold text-stone-400 ml-1">Company Name</label>
-              <input
-                required
-                type="text"
-                placeholder="Ex: Global Tech Inc."
-                className="w-full bg-white border border-stone-200 rounded-xl px-5 py-4 text-stone-900 placeholder:text-stone-300 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all font-light"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-widest font-bold text-stone-400 ml-1">Work Email</label>
-              <input
-                required
-                type="email"
-                placeholder="john@company.com"
-                className="w-full bg-white border border-stone-200 rounded-xl px-5 py-4 text-stone-900 placeholder:text-stone-300 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all font-light"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-widest font-bold text-stone-400 ml-1">Expected Quantity</label>
-              <select
-                required
-                className="w-full bg-white border border-stone-200 rounded-xl px-5 py-4 text-stone-900 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all font-light appearance-none"
-              >
-                <option value="">Select Range</option>
-                <option value="25-50">25 - 50 Units</option>
-                <option value="50-100">50 - 100 Units</option>
-                <option value="100-500">100 - 500 Units</option>
-                <option value="500+">500+ Units</option>
-              </select>
-            </div>
-            <div className="md:col-span-2 space-y-1.5">
-              <label className="text-[10px] uppercase tracking-widest font-bold text-stone-400 ml-1">Additional Requirements</label>
-              <textarea
-                rows={4}
-                placeholder="Tell us about the occasion, branding needs, or specific products you are interested in..."
-                className="w-full bg-white border border-stone-200 rounded-xl px-5 py-4 text-stone-900 placeholder:text-stone-300 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all font-light resize-none"
-              />
-            </div>
-            <div className="md:col-span-2 pt-4">
-              <button
-                type="submit"
-                className="w-full bg-emerald-800 text-white rounded-xl py-5 font-bold text-xs uppercase tracking-[0.2em] hover:bg-emerald-900 transition-all duration-300 shadow-xl shadow-emerald-900/10 hover:shadow-emerald-900/20 active:scale-[0.98]"
-              >
-                Submit Inquiry
-              </button>
-            </div>
-          </form>
-        </div>
-      </section>
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
     </div>
   );
 };

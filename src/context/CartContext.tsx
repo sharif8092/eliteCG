@@ -53,7 +53,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         
         // Map backend items to frontend CartItem type if necessary
-        const backendItems = response.data.items || [];
+        const backendItems = (response.data as any).items || [];
         // We'll trust the backend response which should include product details if we've synced them
         // For now, let's assume the backend returns what we need or we fetch details
         setItems(backendItems);
@@ -90,8 +90,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             headers: { 'x-cart-id': cartIdRef.current }
         });
 
-        if (response.data.success) {
-            setItems(response.data.cart.items);
+        if ((response.data as any).success) {
+            setItems((response.data as any).cart.items);
         }
     } catch (error) {
         console.error('Add to cart failed:', error);
@@ -107,7 +107,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }, {
             headers: { 'x-cart-id': cartIdRef.current }
         });
-        setItems(response.data.cart.items);
+        setItems((response.data as any).cart.items);
     } catch (error) {
         console.error('Remove from cart failed:', error);
     }
@@ -128,7 +128,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }, {
             headers: { 'x-cart-id': cartIdRef.current }
         });
-        setItems(response.data.cart.items);
+        setItems((response.data as any).cart.items);
     } catch (error) {
         console.error('Update quantity failed:', error);
     }

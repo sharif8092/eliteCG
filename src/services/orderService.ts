@@ -75,7 +75,7 @@ export const orderService = {
             ...orderData,
             cartId
         });
-        return mapWooOrderToInternal(response.data.order);
+        return mapWooOrderToInternal((response.data as any).order);
     },
 
     /**

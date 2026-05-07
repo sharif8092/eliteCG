@@ -77,7 +77,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </div>
             </div>
           </div>
-<<<<<<< HEAD
           <div className="mt-24 pt-12 border-t border-stone-800">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 items-center text-[9px] uppercase tracking-[0.3em] font-bold">
               <div>
@@ -97,13 +96,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </div>
             <div className="mt-8 text-center text-[8px] text-stone-700 uppercase tracking-widest leading-relaxed">
               Urban Shark Lifestyle Pvt Ltd • Plot No. 42, Industrial Area, Phase II, New Delhi, 110020 • PAN India Logistics Partner
-=======
-          <div className="mt-24 pt-8 border-t border-stone-800 flex flex-col md:flex-row justify-between items-center text-[9px] uppercase tracking-[0.3em] font-bold">
-            <p>&copy; {new Date().getFullYear()} Urban Shark Corporate. All rights reserved.</p>
-            <div className="flex space-x-8 mt-4 md:mt-0">
-              <a href="/privacy" className="hover:text-white transition-colors">Privacy</a>
-              <a href="/terms" className="hover:text-white transition-colors">Terms</a>
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
             </div>
           </div>
         </div>

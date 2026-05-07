@@ -90,7 +90,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
         {/* Subtle Badges */}
         <div className="absolute top-6 left-6 flex flex-col gap-2">
           {product.featured && (
-<<<<<<< HEAD
             <div className="bg-stone-900 px-3 py-1 rounded-full w-fit">
               <span className="text-[8px] uppercase tracking-widest font-bold text-white">Corporate Pick</span>
             </div>
@@ -103,17 +102,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
           <div className="bg-white/90 backdrop-blur-md px-3 py-1 rounded-full w-fit border border-stone-100">
             <span className="text-[8px] uppercase tracking-widest font-bold text-stone-900 italic">MOQ: 25 Units</span>
           </div>
-=======
-            <div className="bg-white/90 backdrop-blur-md px-3 py-1 rounded-full w-fit">
-              <span className="text-[8px] uppercase tracking-widest font-bold text-emerald-800">Featured</span>
-            </div>
-          )}
-          {discount > 0 && (
-            <div className="bg-red-500 px-3 py-1 rounded-full w-fit">
-              <span className="text-[8px] uppercase tracking-widest font-bold text-white">-{discount}%</span>
-            </div>
-          )}
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
         </div>
 
         <button
@@ -159,9 +147,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
             <span className="text-[8px] text-stone-400 font-bold tracking-widest uppercase">({product.reviewCount})</span>
           </div>
 
-          <div className="flex items-center justify-center gap-3">
-<<<<<<< HEAD
-            <p className="text-stone-900 font-serif text-sm">
+          <div className="flex items-center justify-center gap-3">            <p className="text-stone-900 font-serif text-sm">
               <span className="text-stone-400 text-[10px] uppercase tracking-widest font-sans not-italic mr-1">Starts at</span>
               ₹{product.price.toLocaleString()} 
               <span className="text-stone-400 text-[10px] ml-1 not-italic font-sans">/ unit</span>
@@ -191,18 +177,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
             <span className="text-[10px] uppercase tracking-widest font-bold">Bulk Quote</span>
           </a>
         </div>
-=======
-            {product.originalPrice && product.originalPrice > product.price && (
-              <p className="text-stone-300 font-light text-xs line-through font-serif">
-                ₹{product.originalPrice.toLocaleString()}
-              </p>
-            )}
-            <p className="text-stone-900 font-light text-sm italic font-serif">
-              ₹{product.price.toLocaleString()}
-            </p>
-          </div>
-        </Link>
->>>>>>> 963c70e67cdae6ca863ee837257e235eeccbd2d1
       </div>
     </motion.div>
   );
